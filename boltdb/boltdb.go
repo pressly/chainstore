@@ -1,7 +1,6 @@
 package boltdb
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -10,8 +9,6 @@ import (
 	. "github.com/nulayer/chainstore"
 	"github.com/rcrowley/go-metrics"
 )
-
-var lg = log.New(os.Stderr, "", log.LstdFlags)
 
 type Boltdb struct {
 	storePath  string
@@ -40,18 +37,6 @@ func (s *Boltdb) Open() (err error) {
 	s.db, err = bolt.Open(s.storePath, 0660)
 	if err != nil {
 		return
-	}
-
-	if err = s.db.Check(); err != nil {
-		if errors, ok := err.(bolt.ErrorList); ok {
-			for _, e := range errors {
-				lg.Println("[DB ERROR]:", e)
-			}
-
-			lg.Println("Deleting bolt db.. and lets carry on")
-			os.Remove(s.storePath)
-			s.Open()
-		}
 	}
 
 	// Initialize all required buckets
