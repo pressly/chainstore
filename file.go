@@ -8,22 +8,22 @@ import (
 	"strings"
 )
 
-type Fsdb struct {
+type fs struct {
 	storePath string
 	perm      os.FileMode // Default: 0755
 }
 
-func NewFsdbStore(storePath string, perm os.FileMode) (store *Fsdb, err error) {
+func FileStore(storePath string, perm os.FileMode) (store *fs) {
 	if perm == 0 {
 		perm = 0755
 	}
 
-	store = &Fsdb{storePath: storePath, perm: perm}
-	err = store.Open()
+	store = &fs{storePath: storePath, perm: perm}
+	// err = store.Open()
 	return
 }
 
-func (f *Fsdb) Open() (err error) {
+func (f *fs) Open() (err error) {
 	// Create the path if doesnt exist
 	if _, err = os.Stat(f.storePath); os.IsNotExist(err) {
 		err = os.MkdirAll(f.storePath, f.perm)
@@ -49,11 +49,11 @@ func (f *Fsdb) Open() (err error) {
 	return
 }
 
-func (f *Fsdb) Close() error {
+func (f *fs) Close() error {
 	return nil // noop
 }
 
-func (f *Fsdb) Put(key string, obj []byte) (err error) {
+func (f *fs) Put(key string, obj []byte) (err error) {
 	if !IsValidKey(key) {
 		return ErrInvalidKey
 	}
@@ -69,7 +69,7 @@ func (f *Fsdb) Put(key string, obj []byte) (err error) {
 	return
 }
 
-func (f *Fsdb) Get(key string) (obj []byte, err error) {
+func (f *fs) Get(key string) (obj []byte, err error) {
 	if !IsValidKey(key) {
 		return nil, ErrInvalidKey
 	}
@@ -86,7 +86,7 @@ func (f *Fsdb) Get(key string) (obj []byte, err error) {
 	return
 }
 
-func (f *Fsdb) Del(key string) (err error) {
+func (f *fs) Del(key string) (err error) {
 	if string(key[0]) == "/" {
 		return ErrInvalidKey
 	}

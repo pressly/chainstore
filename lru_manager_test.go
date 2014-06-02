@@ -9,14 +9,14 @@ import (
 func TestLRUManager(t *testing.T) {
 	var err error
 	var store Store
-	var lru *LRUManager
+	var lru *lruManager
 	var capacity int64 = 20
 
 	Convey("LRUManager", t, func() {
 		storeDir := TempDir()
 
-		store, _ = NewFsdbStore(storeDir, 0755)
-		lru, _ = NewLRUManager(store, capacity)
+		store = FileStore(storeDir, 0755)
+		lru = LRUManager(store, capacity)
 
 		// based on 10% cushion
 		lru.Put("peter", []byte{1, 2, 3})

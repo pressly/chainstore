@@ -10,7 +10,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
-type Boltdb struct {
+type boltdb struct {
 	storePath  string
 	bucketName []byte
 
@@ -18,13 +18,13 @@ type Boltdb struct {
 	bucket *bolt.Bucket
 }
 
-func NewStore(storePath string, bucketName string) (store *Boltdb, err error) {
-	store = &Boltdb{storePath: storePath, bucketName: []byte(bucketName)}
+func NewStore(storePath string, bucketName string) (store *boltdb, err error) {
+	store = &boltdb{storePath: storePath, bucketName: []byte(bucketName)}
 	err = store.Open()
 	return
 }
 
-func (s *Boltdb) Open() (err error) {
+func (s *boltdb) Open() (err error) {
 	// Create the store directory if doesnt exist
 	storeDir := filepath.Dir(s.storePath)
 	if _, err = os.Stat(storeDir); os.IsNotExist(err) {
@@ -46,11 +46,11 @@ func (s *Boltdb) Open() (err error) {
 	})
 }
 
-func (s *Boltdb) Close() error {
+func (s *boltdb) Close() error {
 	return s.db.Close()
 }
 
-func (s *Boltdb) Put(key string, obj []byte) (err error) {
+func (s *boltdb) Put(key string, obj []byte) (err error) {
 	m := metrics.GetOrRegisterTimer("fn.store.bolt.Put", nil)
 	defer m.UpdateSince(time.Now())
 
@@ -64,7 +64,7 @@ func (s *Boltdb) Put(key string, obj []byte) (err error) {
 	return
 }
 
-func (s *Boltdb) Get(key string) (obj []byte, err error) {
+func (s *boltdb) Get(key string) (obj []byte, err error) {
 	m := metrics.GetOrRegisterTimer("fn.store.bolt.Get", nil)
 	defer m.UpdateSince(time.Now())
 
@@ -79,7 +79,7 @@ func (s *Boltdb) Get(key string) (obj []byte, err error) {
 	return
 }
 
-func (s *Boltdb) Del(key string) (err error) {
+func (s *boltdb) Del(key string) (err error) {
 	if !IsValidKey(key) {
 		return ErrInvalidKey
 	}

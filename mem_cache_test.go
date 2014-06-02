@@ -8,7 +8,7 @@ import (
 
 func TestMemCacheStore(t *testing.T) {
 	var store Store
-	store, _ = NewMemCacheStore(10)
+	store = MemCacheStore(10)
 
 	Convey("MemCacheStore", t, func() {
 		e := store.Put("hi", []byte{1, 2, 3})

@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-type LRUManager struct {
+type lruManager struct {
 	store    Store
 	capacity int64 // in bytes
 	cushion  int64 // 10% of bytes of the capacity, to free up this much if it hits
@@ -20,21 +20,21 @@ type lruItem struct {
 	listElement *list.Element
 }
 
-func NewLRUManager(store Store, capacity int64) (*LRUManager, error) {
-	if capacity < 10 {
-		return nil, errors.New("Invalid capacity, must be >= 10 bytes")
-	}
-
-	return &LRUManager{
+func LRUManager(store Store, capacity int64) *lruManager {
+	return &lruManager{
 		store:    store,
 		capacity: capacity,
 		cushion:  int64(float64(capacity) * 0.1),
 		items:    make(map[string]*lruItem, 10000),
 		list:     list.New(),
-	}, nil
+	}
 }
 
-func (s *LRUManager) Open() (err error) {
+func (s *lruManager) Open() (err error) {
+	if s.capacity < 10 {
+		return errors.New("Invalid capacity, must be >= 10 bytes")
+	}
+
 	// TODO: the items list will be empty after restarting a server
 	// with an existing db. We should ask the store for a list of
 	// keys and their size to seed this list. Keys are easy,
@@ -45,12 +45,12 @@ func (s *LRUManager) Open() (err error) {
 	return // noop
 }
 
-func (s *LRUManager) Close() (err error) {
+func (s *lruManager) Close() (err error) {
 	s.store.Close()
 	return // noop
 }
 
-func (s *LRUManager) Put(key string, value []byte) (err error) {
+func (s *lruManager) Put(key string, value []byte) (err error) {
 	defer s.prune() // free up space
 
 	valueSize := int64(len(value))
@@ -69,7 +69,7 @@ func (s *LRUManager) Put(key string, value []byte) (err error) {
 	return s.store.Put(key, value)
 }
 
-func (s *LRUManager) Get(key string) (value []byte, err error) {
+func (s *lruManager) Get(key string) (value []byte, err error) {
 	value, err = s.store.Get(key)
 	valueSize := len(value)
 	if item, exists := s.items[key]; exists {
@@ -80,7 +80,7 @@ func (s *LRUManager) Get(key string) (value []byte, err error) {
 	return
 }
 
-func (s *LRUManager) Del(key string) (err error) {
+func (s *lruManager) Del(key string) (err error) {
 	if item, exists := s.items[key]; exists {
 		s.evict(item)
 	}
@@ -89,36 +89,36 @@ func (s *LRUManager) Del(key string) (err error) {
 
 //--
 
-func (s *LRUManager) Capacity() int64 {
+func (s *lruManager) Capacity() int64 {
 	return s.capacity
 }
 
-func (s *LRUManager) Cushion() int64 {
+func (s *lruManager) Cushion() int64 {
 	return s.cushion
 }
 
-func (s *LRUManager) NumItems() int {
+func (s *lruManager) NumItems() int {
 	return s.list.Len()
 }
 
-func (s *LRUManager) addItem(key string, size int64) {
+func (s *lruManager) addItem(key string, size int64) {
 	item := &lruItem{key: key, size: size}
 	item.listElement = s.list.PushFront(item)
 	s.items[key] = item
 	s.capacity -= size
 }
 
-func (s *LRUManager) promote(item *lruItem) {
+func (s *lruManager) promote(item *lruItem) {
 	s.list.MoveToFront(item.listElement)
 }
 
-func (s *LRUManager) evict(item *lruItem) {
+func (s *lruManager) evict(item *lruItem) {
 	s.list.Remove(item.listElement)
 	delete(s.items, item.key)
 	s.capacity += item.size
 }
 
-func (s *LRUManager) prune() {
+func (s *lruManager) prune() {
 	if s.capacity > 0 {
 		return
 	}

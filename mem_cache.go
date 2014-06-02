@@ -4,29 +4,30 @@ import (
 	"sync"
 )
 
-type MemCache struct {
+type memCache struct {
 	sync.Mutex
 	data map[string][]byte
 }
 
-func NewMemCacheStore(capacity int64) (store *LRUManager, err error) {
-	mem := &MemCache{}
-	mem.Open()
-	store, err = NewLRUManager(mem, capacity)
+// TODO: can we have our own middleware..? .. then it would be lruManager -> memCache
+
+func MemCacheStore(capacity int64) (store *lruManager) {
+	mem := &memCache{}
+	mem.Open() // TODO............
+	store = LRUManager(mem, capacity)
 	return
 }
 
-func (s *MemCache) Open() (err error) {
+func (s *memCache) Open() (err error) {
 	s.data = make(map[string][]byte, 1000)
 	return nil
 }
 
-func (s *MemCache) Close() error {
-	// s.num = 0
+func (s *memCache) Close() error {
 	return nil
 }
 
-func (s *MemCache) Put(key string, obj []byte) (err error) {
+func (s *memCache) Put(key string, obj []byte) (err error) {
 	if !IsValidKey(key) {
 		return ErrInvalidKey
 	}
@@ -34,14 +35,13 @@ func (s *MemCache) Put(key string, obj []byte) (err error) {
 	s.data[key] = obj
 	s.Unlock()
 	return nil
-	// s.num++
 }
 
-func (s *MemCache) Get(key string) (obj []byte, err error) {
+func (s *memCache) Get(key string) (obj []byte, err error) {
 	return s.data[key], nil
 }
 
-func (s *MemCache) Del(key string) (err error) {
+func (s *memCache) Del(key string) (err error) {
 	s.Lock()
 	delete(s.data, key)
 	s.Unlock()

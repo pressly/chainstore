@@ -10,10 +10,17 @@ func NewChain(stores ...Store) (Store, error) {
 		return nil, ErrNoStores
 	}
 	c.stores = stores
-	return c, nil
+	err := c.Open()
+	return c, err
 }
 
 func (s *Chain) Open() (err error) {
+	for _, store := range s.stores {
+		err := store.Open()
+		if err != nil {
+			return err // return first error that comes up
+		}
+	}
 	return // noop, we expect all of the stores to be opened on their own
 }
 

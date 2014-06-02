@@ -30,6 +30,7 @@ func New(stores ...Store) (Store, error) {
 //--
 
 func IsValidKey(key string) bool {
+	// TODO: should this regexp be prebuilt..?
 	m, _ := regexp.MatchString(`(i?)[^a-z0-9\/_\-:\.]`, key)
 	return !m && len(key) <= MAX_KEY_LEN
 }

@@ -6,12 +6,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestFsdbStore(t *testing.T) {
+func TestFileStore(t *testing.T) {
 	var store Store
 	var err error
 
 	Convey("Fsdb Open", t, func() {
-		store, err = NewFsdbStore(TempDir(), 0755)
+		store = FileStore(TempDir(), 0755)
+		err = nil
 		So(err, ShouldEqual, nil)
 
 		Convey("Put/Get/Del basic data", func() {
