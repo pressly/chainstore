@@ -18,7 +18,7 @@ func TestLRUManager(t *testing.T) {
 		storeDir := chainstore.TempDir()
 
 		store = filestore.New(storeDir, 0755)
-		lru = New(store, capacity)
+		lru = New(capacity, store)
 
 		// based on 10% cushion
 		lru.Put("peter", []byte{1, 2, 3})

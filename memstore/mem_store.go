@@ -17,7 +17,7 @@ type memStore struct {
 func New(capacity int64) *lrumgr.LruManager {
 	memStore := &memStore{}
 	memStore.Open() // TODO............
-	store := lrumgr.New(memStore, capacity)
+	store := lrumgr.New(capacity, memStore)
 	return store
 }
 

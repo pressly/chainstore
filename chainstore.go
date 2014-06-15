@@ -8,7 +8,7 @@ import (
 
 var (
 	ErrInvalidKey = errors.New("Invalid key")
-	ErrNoStores   = errors.New("No stores have been provided to chain")
+	// ErrNoStores   = errors.New("No stores have been provided to chain")
 )
 
 const (
@@ -18,13 +18,115 @@ const (
 type Store interface {
 	Open() error
 	Close() error
-	Put(key string, value []byte) error
+	Put(key string, val []byte) error
 	Get(key string) ([]byte, error)
 	Del(key string) error
 }
 
-func New(stores ...Store) (Store, error) {
-	return NewChain(stores...)
+// TODO... get and put on the way up / down..........? how should that work.......?
+// ... and with the async stuff.......?
+
+// TODO: how can we check if a store has been opened...?
+
+type Chain struct {
+	stores []Store
+	async  bool
+}
+
+func New(stores ...Store) Store {
+	return &Chain{stores, false}
+}
+
+func Async(stores ...Store) Store {
+	return &Chain{stores, true}
+}
+
+func (c *Chain) Open() (err error) {
+	for _, s := range c.stores {
+		err = s.Open()
+		if err != nil {
+			return // return first error that comes up
+		}
+	}
+	return
+}
+
+func (c *Chain) Close() (err error) {
+	for _, s := range c.stores {
+		err = s.Close()
+		// TODO: we shouldn't stop on first error.. should keep trying to close
+		// and record errors separately
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (c *Chain) Put(key string, val []byte) (err error) {
+	fn := func() (err error) {
+		for _, s := range c.stores {
+			err = s.Put(key, val)
+			if err != nil {
+				return
+			}
+		}
+		return
+	}
+	if c.async {
+		go fn()
+	} else {
+		err = fn()
+	}
+	return
+}
+
+func (c *Chain) Get(key string) (val []byte, err error) {
+	fn := func() (val []byte, err error) {
+		for i, s := range c.stores {
+			val, err = s.Get(key)
+			if err != nil {
+				return
+			}
+
+			if len(val) > 0 {
+				if i > 0 {
+					// put the value in all other stores up the chain
+					for n := i - 1; n >= 0; n-- {
+						c.stores[n].Put(key, val)
+					}
+				}
+
+				// return the first value found on the chain
+				return
+			}
+		}
+		return
+	}
+	if c.async {
+		go fn()
+	} else {
+		val, err = fn()
+	}
+	return
+}
+
+func (c *Chain) Del(key string) (err error) {
+	fn := func() (err error) {
+		for _, s := range c.stores {
+			err = s.Del(key)
+			if err != nil {
+				return
+			}
+		}
+		return
+	}
+	if c.async {
+		go fn()
+	} else {
+		err = fn()
+	}
+	return
 }
 
 //--

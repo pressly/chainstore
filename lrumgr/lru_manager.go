@@ -27,7 +27,7 @@ type lruItem struct {
 	listElement *list.Element
 }
 
-func New(store chainstore.Store, capacity int64) *LruManager {
+func New(capacity int64, store chainstore.Store) *LruManager {
 	return &LruManager{
 		store:    store,
 		capacity: capacity,

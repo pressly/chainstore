@@ -3,7 +3,7 @@ package chainstore
 // TODO: ... move this all into chainstore.go
 
 // friggen cleannnnnnnnnnnnnnnnnnnn :D
-
+/*
 type Chain struct {
 	stores []Store
 }
@@ -98,6 +98,7 @@ func (s *Chain) Del(key string) error {
 	}
 	return nil
 }
+*/
 
 // TODO:
 // func (s *Chain) SetLogger(l *log.Logger) {
