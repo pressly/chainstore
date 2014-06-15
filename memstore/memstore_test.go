@@ -1,14 +1,15 @@
-package chainstore
+package memstore
 
 import (
 	"testing"
 
+	"github.com/nulayer/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMemCacheStore(t *testing.T) {
-	var store Store
-	store = MemCacheStore(10)
+	var store chainstore.Store
+	store = New(10)
 
 	Convey("MemCacheStore", t, func() {
 		e := store.Put("hi", []byte{1, 2, 3})

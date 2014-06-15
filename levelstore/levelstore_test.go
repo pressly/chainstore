@@ -1,17 +1,17 @@
-package leveldb
+package levelstore
 
 import (
 	"testing"
 
-	. "github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestLeveldbStore(t *testing.T) {
-	var store Store
+func TestLevelStore(t *testing.T) {
+	var store chainstore.Store
 	var err error
 
-	store, err = NewStore(TempDir())
+	store, err = New(chainstore.TempDir())
 	defer store.Close()
 	if err != nil {
 		t.Error(err)
@@ -42,7 +42,7 @@ func TestLeveldbStore(t *testing.T) {
 
 		Convey("Disallow invalid keys", func() {
 			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, ErrInvalidKey)
+			So(err, ShouldEqual, chainstore.ErrInvalidKey)
 		})
 
 	})

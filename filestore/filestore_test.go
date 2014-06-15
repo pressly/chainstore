@@ -1,17 +1,18 @@
-package chainstore
+package filestore
 
 import (
 	"testing"
 
+	"github.com/nulayer/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFileStore(t *testing.T) {
-	var store Store
+	var store chainstore.Store
 	var err error
 
 	Convey("Fsdb Open", t, func() {
-		store = FileStore(TempDir(), 0755)
+		store = New(chainstore.TempDir(), 0755)
 		err = nil
 		So(err, ShouldEqual, nil)
 
@@ -26,7 +27,7 @@ func TestFileStore(t *testing.T) {
 
 		Convey("Disallow invalid keys", func() {
 			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, ErrInvalidKey)
+			So(err, ShouldEqual, chainstore.ErrInvalidKey)
 		})
 
 		Convey("Auto-creating directories on put", func() {

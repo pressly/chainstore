@@ -1,4 +1,4 @@
-package boltdb
+package boltstore
 
 import (
 	"os"
@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	. "github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore"
 	"github.com/rcrowley/go-metrics"
 )
 
-type boltdb struct {
+// TODO: remove the metrics out of here...
+
+type boltStore struct {
 	storePath  string
 	bucketName []byte
 
@@ -18,13 +20,13 @@ type boltdb struct {
 	bucket *bolt.Bucket
 }
 
-func NewStore(storePath string, bucketName string) (store *boltdb, err error) {
-	store = &boltdb{storePath: storePath, bucketName: []byte(bucketName)}
-	err = store.Open()
-	return
+func New(storePath string, bucketName string) (*boltStore, error) {
+	store := &boltStore{storePath: storePath, bucketName: []byte(bucketName)}
+	err := store.Open()
+	return store, err
 }
 
-func (s *boltdb) Open() (err error) {
+func (s *boltStore) Open() (err error) {
 	// Create the store directory if doesnt exist
 	storeDir := filepath.Dir(s.storePath)
 	if _, err = os.Stat(storeDir); os.IsNotExist(err) {
@@ -46,16 +48,16 @@ func (s *boltdb) Open() (err error) {
 	})
 }
 
-func (s *boltdb) Close() error {
+func (s *boltStore) Close() error {
 	return s.db.Close()
 }
 
-func (s *boltdb) Put(key string, obj []byte) (err error) {
+func (s *boltStore) Put(key string, obj []byte) (err error) {
 	m := metrics.GetOrRegisterTimer("fn.store.bolt.Put", nil)
 	defer m.UpdateSince(time.Now())
 
-	if !IsValidKey(key) {
-		return ErrInvalidKey
+	if !chainstore.IsValidKey(key) {
+		return chainstore.ErrInvalidKey
 	}
 	err = s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
@@ -64,12 +66,12 @@ func (s *boltdb) Put(key string, obj []byte) (err error) {
 	return
 }
 
-func (s *boltdb) Get(key string) (obj []byte, err error) {
+func (s *boltStore) Get(key string) (obj []byte, err error) {
 	m := metrics.GetOrRegisterTimer("fn.store.bolt.Get", nil)
 	defer m.UpdateSince(time.Now())
 
-	if !IsValidKey(key) {
-		return nil, ErrInvalidKey
+	if !chainstore.IsValidKey(key) {
+		return nil, chainstore.ErrInvalidKey
 	}
 	err = s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
@@ -79,9 +81,9 @@ func (s *boltdb) Get(key string) (obj []byte, err error) {
 	return
 }
 
-func (s *boltdb) Del(key string) (err error) {
-	if !IsValidKey(key) {
-		return ErrInvalidKey
+func (s *boltStore) Del(key string) (err error) {
+	if !chainstore.IsValidKey(key) {
+		return chainstore.ErrInvalidKey
 	}
 	err = s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)

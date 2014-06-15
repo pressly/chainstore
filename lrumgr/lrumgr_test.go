@@ -1,22 +1,24 @@
-package chainstore
+package lrumgr
 
 import (
 	"testing"
 
+	"github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore/filestore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLRUManager(t *testing.T) {
 	var err error
-	var store Store
-	var lru *lruManager
+	var store chainstore.Store
+	var lru *LruManager
 	var capacity int64 = 20
 
 	Convey("LRUManager", t, func() {
-		storeDir := TempDir()
+		storeDir := chainstore.TempDir()
 
-		store = FileStore(storeDir, 0755)
-		lru = LRUManager(store, capacity)
+		store = filestore.New(storeDir, 0755)
+		lru = New(store, capacity)
 
 		// based on 10% cushion
 		lru.Put("peter", []byte{1, 2, 3})

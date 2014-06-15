@@ -1,28 +1,30 @@
-package s3
+package s3store
 
 import (
 	"time"
 
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
-	. "github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore"
 	"github.com/rcrowley/go-metrics"
 )
 
-type S3 struct {
+// TODO: remove go-metrics out of here..
+
+type s3Store struct {
 	BucketId, AccessKey, SecretKey string
 
 	conn   *s3.S3
 	bucket *s3.Bucket
 }
 
-func NewStore(bucketId string, accessKey string, secretKey string) (store *S3, err error) {
-	store = &S3{BucketId: bucketId, AccessKey: accessKey, SecretKey: secretKey}
-	err = store.Open()
-	return
+func New(bucketId string, accessKey string, secretKey string) (*s3Store, error) {
+	store := &s3Store{BucketId: bucketId, AccessKey: accessKey, SecretKey: secretKey}
+	err := store.Open()
+	return store, err
 }
 
-func (s *S3) Open() (err error) {
+func (s *s3Store) Open() (err error) {
 	auth, err := aws.GetAuth(s.AccessKey, s.SecretKey)
 	if err != nil {
 		return
@@ -33,27 +35,26 @@ func (s *S3) Open() (err error) {
 	return nil // TODO: no errors ever..?
 }
 
-func (s *S3) Close() error {
+func (s *s3Store) Close() error {
 	return nil // TODO: .. nothing to do here..?
 }
 
-func (s *S3) Put(key string, obj []byte) error {
+func (s *s3Store) Put(key string, obj []byte) error {
 	m := metrics.GetOrRegisterTimer("fn.store.s3.Put", nil)
 	defer m.UpdateSince(time.Now())
 
-	if !IsValidKey(key) {
-		return ErrInvalidKey
+	if !chainstore.IsValidKey(key) {
+		return chainstore.ErrInvalidKey
 	}
-	// TODO: metadata.........
 	return s.bucket.Put(key, obj, `application/octet-stream`, s3.PublicRead)
 }
 
-func (s *S3) Get(key string) ([]byte, error) {
+func (s *s3Store) Get(key string) ([]byte, error) {
 	m := metrics.GetOrRegisterTimer("fn.store.s3.Get", nil)
 	defer m.UpdateSince(time.Now())
 
-	if !IsValidKey(key) {
-		return nil, ErrInvalidKey
+	if !chainstore.IsValidKey(key) {
+		return nil, chainstore.ErrInvalidKey
 	}
 
 	obj, err := s.bucket.Get(key)
@@ -64,9 +65,9 @@ func (s *S3) Get(key string) ([]byte, error) {
 	return obj, nil
 }
 
-func (s *S3) Del(key string) error {
-	if !IsValidKey(key) {
-		return ErrInvalidKey
+func (s *s3Store) Del(key string) error {
+	if !chainstore.IsValidKey(key) {
+		return chainstore.ErrInvalidKey
 	}
 	return s.bucket.Del(key)
 }

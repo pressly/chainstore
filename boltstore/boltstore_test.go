@@ -1,17 +1,17 @@
-package boltdb
+package boltstore
 
 import (
 	"testing"
 
-	. "github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestBoltdbStore(t *testing.T) {
-	var store Store
+func TestBoltStore(t *testing.T) {
+	var store chainstore.Store
 	var err error
 
-	store, err = NewStore(TempDir()+"/test.db", "test")
+	store, err = New(chainstore.TempDir()+"/test.db", "test")
 	defer store.Close()
 	if err != nil {
 		t.Error(err)
@@ -45,7 +45,7 @@ func TestBoltdbStore(t *testing.T) {
 
 		Convey("Disallow invalid keys", func() {
 			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, ErrInvalidKey)
+			So(err, ShouldEqual, chainstore.ErrInvalidKey)
 		})
 
 	})

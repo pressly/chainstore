@@ -1,14 +1,14 @@
-package s3
+package s3store
 
 import (
 	"testing"
 
-	. "github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestS3Store(t *testing.T) {
-	var store Store
+	var store chainstore.Store
 	var err error
 
 	_ = store
