@@ -25,11 +25,6 @@ func TestFileStore(t *testing.T) {
 			So(data, ShouldResemble, []byte{1, 2, 3, 4})
 		})
 
-		Convey("Disallow invalid keys", func() {
-			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, chainstore.ErrInvalidKey)
-		})
-
 		Convey("Auto-creating directories on put", func() {
 			err = store.Put("hello/there/everyone.txt", []byte{1, 2, 3, 4})
 			So(err, ShouldEqual, nil)

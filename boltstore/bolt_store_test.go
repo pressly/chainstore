@@ -11,11 +11,12 @@ func TestBoltStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	store, err = New(chainstore.TempDir()+"/test.db", "test")
-	defer store.Close()
+	store = New(chainstore.TempDir()+"/test.db", "test")
+	err = store.Open()
 	if err != nil {
 		t.Error(err)
 	}
+	defer store.Close() // does this get called?
 
 	Convey("Boltdb Open", t, func() {
 
@@ -41,11 +42,6 @@ func TestBoltStore(t *testing.T) {
 
 			v, _ := store.Get("hi")
 			So(len(v), ShouldEqual, 0)
-		})
-
-		Convey("Disallow invalid keys", func() {
-			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, chainstore.ErrInvalidKey)
 		})
 
 	})

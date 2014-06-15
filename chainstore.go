@@ -8,7 +8,6 @@ import (
 
 var (
 	ErrInvalidKey = errors.New("Invalid key")
-	// ErrNoStores   = errors.New("No stores have been provided to chain")
 )
 
 const (
@@ -22,9 +21,6 @@ type Store interface {
 	Get(key string) ([]byte, error)
 	Del(key string) error
 }
-
-// TODO... get and put on the way up / down..........? how should that work.......?
-// ... and with the async stuff.......?
 
 // TODO: how can we check if a store has been opened...?
 
@@ -64,6 +60,10 @@ func (c *Chain) Close() (err error) {
 }
 
 func (c *Chain) Put(key string, val []byte) (err error) {
+	if !IsValidKey(key) {
+		return ErrInvalidKey
+	}
+
 	fn := func() (err error) {
 		for _, s := range c.stores {
 			err = s.Put(key, val)
@@ -82,6 +82,10 @@ func (c *Chain) Put(key string, val []byte) (err error) {
 }
 
 func (c *Chain) Get(key string) (val []byte, err error) {
+	if !IsValidKey(key) {
+		return nil, ErrInvalidKey
+	}
+
 	fn := func() (val []byte, err error) {
 		for i, s := range c.stores {
 			val, err = s.Get(key)
@@ -93,7 +97,7 @@ func (c *Chain) Get(key string) (val []byte, err error) {
 				if i > 0 {
 					// put the value in all other stores up the chain
 					for n := i - 1; n >= 0; n-- {
-						c.stores[n].Put(key, val)
+						c.stores[n].Put(key, val) // errors..?
 					}
 				}
 
@@ -112,6 +116,10 @@ func (c *Chain) Get(key string) (val []byte, err error) {
 }
 
 func (c *Chain) Del(key string) (err error) {
+	if !IsValidKey(key) {
+		return ErrInvalidKey
+	}
+
 	fn := func() (err error) {
 		for _, s := range c.stores {
 			err = s.Del(key)

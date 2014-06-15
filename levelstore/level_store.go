@@ -2,8 +2,6 @@ package levelstore
 
 import (
 	"os"
-
-	"github.com/nulayer/chainstore"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -12,10 +10,8 @@ type levelStore struct {
 	db        *leveldb.DB
 }
 
-func New(storePath string) (*levelStore, error) {
-	store := &levelStore{storePath: storePath}
-	err := store.Open()
-	return store, err
+func New(storePath string) *levelStore {
+	return &levelStore{storePath: storePath}
 }
 
 func (s *levelStore) Open() (err error) {
@@ -35,28 +31,18 @@ func (s *levelStore) Close() error {
 	return s.db.Close()
 }
 
-func (s *levelStore) Put(key string, obj []byte) error {
-	if !chainstore.IsValidKey(key) {
-		return chainstore.ErrInvalidKey
-	}
-	return s.db.Put([]byte(key), obj, nil)
+func (s *levelStore) Put(key string, val []byte) error {
+	return s.db.Put([]byte(key), val, nil)
 }
 
-func (s *levelStore) Get(key string) ([]byte, error) {
-	if !chainstore.IsValidKey(key) {
-		return nil, chainstore.ErrInvalidKey
-	}
-
-	obj, err := s.db.Get([]byte(key), nil)
+func (s *levelStore) Get(key string) (val []byte, err error) {
+	val, err = s.db.Get([]byte(key), nil)
 	if err != nil && err != leveldb.ErrNotFound {
 		return nil, err
 	}
-	return obj, nil
+	return val, nil
 }
 
 func (s *levelStore) Del(key string) error {
-	if !chainstore.IsValidKey(key) {
-		return chainstore.ErrInvalidKey
-	}
 	return s.db.Delete([]byte(key), nil)
 }

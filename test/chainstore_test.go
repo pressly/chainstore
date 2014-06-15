@@ -19,7 +19,55 @@ func TestBasicChain(t *testing.T) {
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 
-	Convey("Chain", t, func() {
+	Convey("Basic chain", t, func() {
+		storeDir := chainstore.TempDir()
+		err = nil
+
+		ms = memstore.New(100)
+		fs = filestore.New(storeDir+"/filestore", 0755)
+
+		chain = chainstore.New(
+			logmgr.New(logger, ""),
+			ms,
+			fs,
+		)
+		err = chain.Open()
+		So(err, ShouldEqual, nil)
+
+		Convey("Put/Get/Del", func() {
+			v := []byte("value")
+			err = chain.Put("k", v)
+			So(err, ShouldEqual, nil)
+
+			val, err := chain.Get("k")
+			So(err, ShouldEqual, nil)
+			So(v, ShouldResemble, v)
+
+			val, err = ms.Get("k")
+			So(err, ShouldEqual, nil)
+			So(val, ShouldResemble, v)
+
+			val, err = fs.Get("k")
+			So(err, ShouldEqual, nil)
+			So(val, ShouldResemble, v)
+
+			err = chain.Del("k")
+			So(err, ShouldEqual, nil)
+
+			val, err = fs.Get("k")
+			So(err, ShouldEqual, nil)
+			So(len(val), ShouldEqual, 0)
+		})
+	})
+}
+
+func TestAsyncChain(t *testing.T) {
+	var ms, fs, chain chainstore.Store
+	var err error
+
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+
+	Convey("Async chain", t, func() {
 		storeDir := chainstore.TempDir()
 		err = nil
 
@@ -56,7 +104,6 @@ func TestBasicChain(t *testing.T) {
 			So(err, ShouldEqual, nil)
 			So(val, ShouldResemble, v)
 		})
-
 	})
 
 }

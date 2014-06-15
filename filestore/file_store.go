@@ -21,7 +21,6 @@ func New(storePath string, perm os.FileMode) *fileStore {
 	}
 
 	store := &fileStore{storePath: storePath, perm: perm}
-	// err = store.Open()
 	return store
 }
 
@@ -51,15 +50,9 @@ func (s *fileStore) Open() (err error) {
 	return
 }
 
-func (s *fileStore) Close() error {
-	return nil // noop
-}
+func (s *fileStore) Close() (err error) { return }
 
-func (s *fileStore) Put(key string, obj []byte) (err error) {
-	if !chainstore.IsValidKey(key) {
-		return chainstore.ErrInvalidKey
-	}
-
+func (s *fileStore) Put(key string, val []byte) (err error) {
 	if strings.Index(key, "/") > 0 { // folder key
 		err = os.MkdirAll(filepath.Dir(filepath.Join(s.storePath, key)), s.perm)
 		if err != nil {
@@ -67,24 +60,20 @@ func (s *fileStore) Put(key string, obj []byte) (err error) {
 		}
 	}
 
-	err = ioutil.WriteFile(filepath.Join(s.storePath, key), obj, s.perm)
+	err = ioutil.WriteFile(filepath.Join(s.storePath, key), val, s.perm)
 	return
 }
 
-func (s *fileStore) Get(key string) (obj []byte, err error) {
-	if !chainstore.IsValidKey(key) {
-		return nil, chainstore.ErrInvalidKey
-	}
-
+func (s *fileStore) Get(key string) (val []byte, err error) {
 	fp := filepath.Join(s.storePath, key)
 
 	// If the object isn't found, that isn't an error.. just return an empty
 	// object.. an error is when we can't talk to the data store
 	if _, err = os.Stat(fp); os.IsNotExist(err) {
-		return obj, nil
+		return val, nil
 	}
 
-	obj, err = ioutil.ReadFile(fp)
+	val, err = ioutil.ReadFile(fp)
 	return
 }
 

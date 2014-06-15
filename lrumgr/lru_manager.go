@@ -7,15 +7,10 @@ import (
 	"github.com/nulayer/chainstore"
 )
 
-// TODO... should we call this struct lruManager or lrumgr
-// lruManager is more clear here.. the package is lrumgr
-// .. should we then call fileStore, boltStore, etc...?
-// .. should these structs be public..?
-
 type LruManager struct {
-	store    chainstore.Store // TODO ... need thim........? change the chain scheme
-	capacity int64            // in bytes
-	cushion  int64            // 10% of bytes of the capacity, to free up this much if it hits
+	store    chainstore.Store
+	capacity int64 // in bytes
+	cushion  int64 // 10% of bytes of the capacity, to free up this much if it hits
 
 	items map[string]*lruItem
 	list  *list.List
@@ -49,40 +44,39 @@ func (m *LruManager) Open() (err error) {
 	// from each kind of store is challenging / over-kill (ie. s3).
 	// we could persist the LRU list of keys/objects somewhere..
 	// perhaps using a bolt bucket.
-	return // noop
+	return
 }
 
 func (m *LruManager) Close() (err error) {
-	m.store.Close()
-	return // noop
+	return m.store.Close()
 }
 
-func (m *LruManager) Put(key string, value []byte) (err error) {
+func (m *LruManager) Put(key string, val []byte) (err error) {
 	defer m.prune() // free up space
 
-	valueSize := int64(len(value))
+	valSize := int64(len(val))
 
 	if item, exists := m.items[key]; exists {
 		m.list.MoveToFront(item.listElement)
-		m.capacity += (item.size - valueSize)
-		item.size = valueSize
+		m.capacity += (item.size - valSize)
+		item.size = valSize
 		m.promote(item)
 	} else {
-		m.addItem(key, valueSize)
+		m.addItem(key, valSize)
 	}
 
 	// TODO: what if the value is larger then even the initial capacity?
 	// ..error..
-	return m.store.Put(key, value)
+	return m.store.Put(key, val)
 }
 
-func (m *LruManager) Get(key string) (value []byte, err error) {
-	value, err = m.store.Get(key)
-	valueSize := len(value)
+func (m *LruManager) Get(key string) (val []byte, err error) {
+	val, err = m.store.Get(key)
+	valSize := len(val)
 	if item, exists := m.items[key]; exists {
 		m.promote(item)
-	} else if valueSize > 0 {
-		m.addItem(key, int64(valueSize))
+	} else if valSize > 0 {
+		m.addItem(key, int64(valSize))
 	}
 	return
 }

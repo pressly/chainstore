@@ -3,11 +3,8 @@ package boltstore
 import (
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/nulayer/chainstore"
-	"github.com/rcrowley/go-metrics"
 )
 
 // TODO: remove the metrics out of here...
@@ -20,10 +17,8 @@ type boltStore struct {
 	bucket *bolt.Bucket
 }
 
-func New(storePath string, bucketName string) (*boltStore, error) {
-	store := &boltStore{storePath: storePath, bucketName: []byte(bucketName)}
-	err := store.Open()
-	return store, err
+func New(storePath string, bucketName string) *boltStore {
+	return &boltStore{storePath: storePath, bucketName: []byte(bucketName)}
 }
 
 func (s *boltStore) Open() (err error) {
@@ -52,39 +47,24 @@ func (s *boltStore) Close() error {
 	return s.db.Close()
 }
 
-func (s *boltStore) Put(key string, obj []byte) (err error) {
-	m := metrics.GetOrRegisterTimer("fn.store.bolt.Put", nil)
-	defer m.UpdateSince(time.Now())
-
-	if !chainstore.IsValidKey(key) {
-		return chainstore.ErrInvalidKey
-	}
+func (s *boltStore) Put(key string, val []byte) (err error) {
 	err = s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
-		return b.Put([]byte(key), obj)
+		return b.Put([]byte(key), val)
 	})
 	return
 }
 
-func (s *boltStore) Get(key string) (obj []byte, err error) {
-	m := metrics.GetOrRegisterTimer("fn.store.bolt.Get", nil)
-	defer m.UpdateSince(time.Now())
-
-	if !chainstore.IsValidKey(key) {
-		return nil, chainstore.ErrInvalidKey
-	}
+func (s *boltStore) Get(key string) (val []byte, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
-		obj = b.Get([]byte(key))
+		val = b.Get([]byte(key))
 		return nil
 	})
 	return
 }
 
 func (s *boltStore) Del(key string) (err error) {
-	if !chainstore.IsValidKey(key) {
-		return chainstore.ErrInvalidKey
-	}
 	err = s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
 		return b.Delete([]byte(key))

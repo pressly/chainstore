@@ -11,11 +11,12 @@ func TestLevelStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	store, err = New(chainstore.TempDir())
-	defer store.Close()
+	store = New(chainstore.TempDir())
+	err = store.Open()
 	if err != nil {
 		t.Error(err)
 	}
+	defer store.Close()
 
 	Convey("Leveldb Open", t, func() {
 
@@ -38,11 +39,6 @@ func TestLevelStore(t *testing.T) {
 			e2 := store.Del("bye")
 			So(e1, ShouldEqual, nil)
 			So(e2, ShouldEqual, nil)
-		})
-
-		Convey("Disallow invalid keys", func() {
-			err = store.Put("test!!!", []byte{1})
-			So(err, ShouldEqual, chainstore.ErrInvalidKey)
 		})
 
 	})
