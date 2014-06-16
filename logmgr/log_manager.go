@@ -10,6 +10,9 @@ type logManager struct {
 	tag    string
 }
 
+// NOTE: this will chirp too often when put`ing back up the chain
+// after a get. we may need to make somedistinction between stores and mangers
+
 func New(logger *log.Logger, tag string) *logManager {
 	if tag != "" {
 		tag = fmt.Sprintf(" [%s]", tag)
