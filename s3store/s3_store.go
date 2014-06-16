@@ -10,6 +10,7 @@ type s3Store struct {
 
 	conn   *s3.S3
 	bucket *s3.Bucket
+	opened bool
 }
 
 func New(bucketId string, accessKey string, secretKey string) *s3Store {
@@ -17,6 +18,10 @@ func New(bucketId string, accessKey string, secretKey string) *s3Store {
 }
 
 func (s *s3Store) Open() (err error) {
+	if s.opened {
+		return
+	}
+
 	auth, err := aws.GetAuth(s.AccessKey, s.SecretKey)
 	if err != nil {
 		return
@@ -24,10 +29,12 @@ func (s *s3Store) Open() (err error) {
 
 	s.conn = s3.New(auth, aws.USEast) // TODO: hardcoded region..?
 	s.bucket = s.conn.Bucket(s.BucketId)
+	s.opened = true
 	return
 }
 
 func (s *s3Store) Close() (err error) {
+	s.opened = false
 	return // TODO: .. nothing to do here..?
 }
 

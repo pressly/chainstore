@@ -31,6 +31,8 @@ type Chain struct {
 
 func New(stores ...Store) Store {
 	return &Chain{stores, false}
+	// TODO: make the chain..
+	// call Open(), but in case of error..?
 }
 
 func Async(stores ...Store) Store {

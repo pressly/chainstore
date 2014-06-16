@@ -2,12 +2,14 @@ package levelstore
 
 import (
 	"os"
+
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type levelStore struct {
 	storePath string
 	db        *leveldb.DB
+	opened    bool
 }
 
 func New(storePath string) *levelStore {
@@ -15,6 +17,10 @@ func New(storePath string) *levelStore {
 }
 
 func (s *levelStore) Open() (err error) {
+	if s.opened {
+		return
+	}
+
 	// Create the store directory if doesnt exist
 	if _, err = os.Stat(s.storePath); os.IsNotExist(err) {
 		err = os.MkdirAll(s.storePath, 0755)
@@ -24,11 +30,18 @@ func (s *levelStore) Open() (err error) {
 	}
 
 	s.db, err = leveldb.OpenFile(s.storePath, nil)
+	if err == nil {
+		s.opened = true
+	}
 	return
 }
 
-func (s *levelStore) Close() error {
-	return s.db.Close()
+func (s *levelStore) Close() (err error) {
+	err = s.db.Close()
+	if err == nil {
+		s.opened = false
+	}
+	return
 }
 
 func (s *levelStore) Put(key string, val []byte) error {

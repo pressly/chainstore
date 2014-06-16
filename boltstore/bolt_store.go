@@ -7,14 +7,13 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// TODO: remove the metrics out of here...
-
 type boltStore struct {
 	storePath  string
 	bucketName []byte
 
 	db     *bolt.DB
 	bucket *bolt.Bucket
+	opened bool
 }
 
 func New(storePath string, bucketName string) *boltStore {
@@ -22,6 +21,10 @@ func New(storePath string, bucketName string) *boltStore {
 }
 
 func (s *boltStore) Open() (err error) {
+	if s.opened {
+		return
+	}
+
 	// Create the store directory if doesnt exist
 	storeDir := filepath.Dir(s.storePath)
 	if _, err = os.Stat(storeDir); os.IsNotExist(err) {
@@ -41,10 +44,16 @@ func (s *boltStore) Open() (err error) {
 		s.bucket, err = tx.CreateBucketIfNotExists(s.bucketName)
 		return err
 	})
+
+	s.opened = true
 }
 
-func (s *boltStore) Close() error {
-	return s.db.Close()
+func (s *boltStore) Close() (err error) {
+	err = s.db.Close()
+	if err == nil {
+		s.opened = false
+	}
+	return
 }
 
 func (s *boltStore) Put(key string, val []byte) (err error) {

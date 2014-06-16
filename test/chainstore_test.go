@@ -85,7 +85,7 @@ func TestAsyncChain(t *testing.T) {
 		err = chain.Open()
 		So(err, ShouldEqual, nil)
 
-		Convey("Put", func() {
+		Convey("Put/Get/Del", func() {
 			v := []byte("value")
 			err = chain.Put("k", v)
 			So(err, ShouldEqual, nil)
@@ -109,42 +109,6 @@ func TestAsyncChain(t *testing.T) {
 }
 
 /*
-
-c := chainstore.New(
-	logger,
-	memstore,
-	filestore,
-	bg_manager,
-	boltdb,
-	s3
-)
-
-c := chainstore.New(
-	logger,
-	chainstore.New(memstore, s2),
-	chainstore.New(filestore, s3store).async()
-)
-
-
-
-... okay.. something like that is okay for normal usage, with go support..
-
-* how do we get to support metrics tho..? which wraps the time
-same example:
-
-
-this will work:..
-
-c := chainstore.New(
-	logger,
-	chainstore.New(memstore, s2),
-	chainstore.Async(metricsmgr.New(chainstore.New(filestore, s3store), "blah"))
-)
-
-... a bit crazy.. now lets add......
-
-* batch > lru > bolt
-
 c := chainstore.New(
 	logmgr.New(l, ""),
 	memstore.New(1000),
@@ -161,62 +125,5 @@ c := chainstore.New(
 		)
 	)
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 */
