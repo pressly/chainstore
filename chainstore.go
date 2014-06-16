@@ -88,31 +88,27 @@ func (c *Chain) Get(key string) (val []byte, err error) {
 		return nil, ErrInvalidKey
 	}
 
-	fn := func() (val []byte, err error) {
-		for i, s := range c.stores {
-			val, err = s.Get(key)
-			if err != nil {
-				return
-			}
+	for i, s := range c.stores {
+		val, err = s.Get(key)
+		if err != nil {
+			return
+		}
 
-			if len(val) > 0 {
-				if i > 0 {
-					// put the value in all other stores up the chain
+		if len(val) > 0 {
+			if i > 0 {
+				// put the value in all other stores up the chain
+				fn := func() {
 					for n := i - 1; n >= 0; n-- {
 						c.stores[n].Put(key, val) // errors..?
 					}
 				}
-
-				// return the first value found on the chain
-				return
+				// if c.async { } else { } ....?
+				go fn()
 			}
+
+			// return the first value found on the chain
+			return
 		}
-		return
-	}
-	if c.async {
-		go fn()
-	} else {
-		val, err = fn()
 	}
 	return
 }

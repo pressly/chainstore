@@ -82,8 +82,8 @@ func TestAsyncChain(t *testing.T) {
 			logmgr.New(logger, ""),
 			ms,
 			chainstore.Async(
+				logmgr.New(logger, "async"),
 				metricsmgr.New("chaintest", nil,
-					logmgr.New(logger, "async"),
 					fs,
 					lrumgr.New(100, bs),
 				),
@@ -108,6 +108,10 @@ func TestAsyncChain(t *testing.T) {
 			time.Sleep(10e6) // wait for async operation..
 
 			val, err = fs.Get("k")
+			So(err, ShouldEqual, nil)
+			So(val, ShouldResemble, v)
+
+			val, err = bs.Get("k")
 			So(err, ShouldEqual, nil)
 			So(val, ShouldResemble, v)
 		})
