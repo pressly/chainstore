@@ -22,6 +22,7 @@ type lruItem struct {
 	listElement *list.Element
 }
 
+// TODO: should lruManager support a chain of passed stores..?
 func New(capacity int64, store chainstore.Store) *LruManager {
 	return &LruManager{
 		store:    store,
@@ -36,6 +37,8 @@ func (m *LruManager) Open() (err error) {
 	if m.capacity < 10 {
 		return errors.New("Invalid capacity, must be >= 10 bytes")
 	}
+
+	err = m.store.Open()
 
 	// TODO: the items list will be empty after restarting a server
 	// with an existing db. We should ask the store for a list of

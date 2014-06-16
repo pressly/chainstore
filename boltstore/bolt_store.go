@@ -40,12 +40,14 @@ func (s *boltStore) Open() (err error) {
 	}
 
 	// Initialize all required buckets
-	return s.db.Update(func(tx *bolt.Tx) (err error) {
+	err = s.db.Update(func(tx *bolt.Tx) (err error) {
 		s.bucket, err = tx.CreateBucketIfNotExists(s.bucketName)
 		return err
 	})
-
-	s.opened = true
+	if err == nil {
+		s.opened = true
+	}
+	return
 }
 
 func (s *boltStore) Close() (err error) {

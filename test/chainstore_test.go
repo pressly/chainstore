@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/nulayer/chainstore"
+	"github.com/nulayer/chainstore/boltstore"
 	"github.com/nulayer/chainstore/filestore"
 	"github.com/nulayer/chainstore/logmgr"
+	"github.com/nulayer/chainstore/lrumgr"
 	"github.com/nulayer/chainstore/memstore"
+	"github.com/nulayer/chainstore/metricsmgr"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -62,7 +65,7 @@ func TestBasicChain(t *testing.T) {
 }
 
 func TestAsyncChain(t *testing.T) {
-	var ms, fs, chain chainstore.Store
+	var ms, fs, bs, chain chainstore.Store
 	var err error
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
@@ -73,13 +76,17 @@ func TestAsyncChain(t *testing.T) {
 
 		ms = memstore.New(100)
 		fs = filestore.New(storeDir+"/filestore", 0755)
+		bs = boltstore.New(storeDir+"/boltstore/bolt.db", "test")
 
 		chain = chainstore.New(
 			logmgr.New(logger, ""),
 			ms,
 			chainstore.Async(
-				logmgr.New(logger, "async"),
-				fs,
+				metricsmgr.New("chaintest", nil,
+					logmgr.New(logger, "async"),
+					fs,
+					lrumgr.New(100, bs),
+				),
 			),
 		)
 		err = chain.Open()
