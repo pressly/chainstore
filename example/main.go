@@ -2,32 +2,57 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nulayer/chainstore"
-	"github.com/nulayer/chainstore/boltdb"
-	"github.com/nulayer/chainstore/s3"
+	"github.com/nulayer/chainstore/boltstore"
+	"github.com/nulayer/chainstore/lrumgr"
+	"github.com/nulayer/chainstore/metricsmgr"
+	"github.com/nulayer/chainstore/s3store"
 )
 
 func main() {
-	diskStore, err := boltdb.NewStore("/tmp/store.db", "myBucket")
+	diskStore := lrumgr.New(500*1024*1024, // 500MB of working data
+		metricsmgr.New("chainstore.ex.bolt", nil,
+			boltstore.New("/tmp/store.db", "myBucket"),
+		),
+	)
+
+	remoteStore := metricsmgr.New("chainstore.ex.s3", nil,
+		// NOTE: you'll have to supply your own keys in order for this example to work properly
+		s3store.New("myBucket", "access-key", "secret-key"),
+	)
+
+	dataStore := chainstore.New(diskStore, chainstore.Async(remoteStore))
+
+	// OR.. define inline. Except, I wanted to show store independence & state.
+	/*
+		dataStore := chainstore.New(
+			lrumgr.New(500*1024*1024, // 500MB of working data
+				metricsmgr.New("chainstore.ex.bolt", nil,
+					boltstore.New("/tmp/store.db", "myBucket"),
+				),
+			),
+			chainstore.Async( // calls stores in the async chain in a goroutine
+				metricsmgr.New("chainstore.ex.s3", nil,
+					// NOTE: you'll have to supply your own keys in order for this example to work properly
+					s3store.New("myBucket", "access-key", "secret-key"),
+				),
+			),
+		)
+	*/
+
+	err := dataStore.Open()
 	if err != nil {
-		panic(err)
-	}
-	diskLru, err := chainstore.NewLRUManager(diskStore, 500*1024*1024) // 500MB of working data
-	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	// NOTE: you'll have to supply your own keys in order for this example to work properly
-	remoteStore, err := s3.NewStore("myBucket", "access-key", "secret-key")
-	if err != nil {
-		panic(err)
-	}
-	dataStore, err := chainstore.New(diskLru, remoteStore) // flows top-down
-	if err != nil {
-		panic(err)
-	}
+	// Since we've used the metricsManager above (metricsmgr), any calls to the boltstore
+	// and s3store will be measured. Next is to send metrics to librato, graphite, influxdb,
+	// whatever.. via github.com/rcrowley/go-metrics
+	// go librato.Librato(metrics.DefaultRegistry, 10e9, ...)
 
 	//--
 

@@ -1,4 +1,4 @@
-# ChainStore
+# Chainstore
 
 Chainstore is simple key-value interface to a variety of storage engines organized as a chain of operations. A store adapter is just an engine interface to ```Open```, ```Close```, ```Put```, ```Get```, and ```Del``` . Each store has their own inherent properties and so when chained together, it makes for a useful combinations of data caching, flow and persistence depending on your application.
 
@@ -9,32 +9,57 @@ package main
 
 import (
   "fmt"
+  "os"
   "time"
 
   "github.com/nulayer/chainstore"
-  "github.com/nulayer/chainstore/boltdb"
-  "github.com/nulayer/chainstore/s3"
+  "github.com/nulayer/chainstore/boltstore"
+  "github.com/nulayer/chainstore/lrumgr"
+  "github.com/nulayer/chainstore/metricsmgr"
+  "github.com/nulayer/chainstore/s3store"
 )
 
 func main() {
-  diskStore, err := boltdb.NewStore("/tmp/store.db", "myBucket")
+  diskStore := lrumgr.New(500*1024*1024, // 500MB of working data
+    metricsmgr.New("chainstore.ex.bolt", nil,
+      boltstore.New("/tmp/store.db", "myBucket"),
+    ),
+  )
+
+  remoteStore := metricsmgr.New("chainstore.ex.s3", nil,
+    // NOTE: you'll have to supply your own keys in order for this example to work properly
+    s3store.New("myBucket", "access-key", "secret-key"),
+  )
+
+  dataStore := chainstore.New(diskStore, chainstore.Async(remoteStore))
+
+  // OR.. define inline. Except, I wanted to show store independence & state.
+  /*
+    dataStore := chainstore.New(
+      lrumgr.New(500*1024*1024, // 500MB of working data
+        metricsmgr.New("chainstore.ex.bolt", nil,
+          boltstore.New("/tmp/store.db", "myBucket"),
+        ),
+      ),
+      chainstore.Async( // calls stores in the async chain in a goroutine
+        metricsmgr.New("chainstore.ex.s3", nil,
+          // NOTE: you'll have to supply your own keys in order for this example to work properly
+          s3store.New("myBucket", "access-key", "secret-key"),
+        ),
+      ),
+    )
+  */
+
+  err := dataStore.Open()
   if err != nil {
-    panic(err)
-  }
-  diskLru, err := chainstore.NewLRUManager(diskStore, 500*1024*1024) // 500MB of working data
-  if err != nil {
-    panic(err)
+    fmt.Println(err)
+    os.Exit(1)
   }
 
-  // NOTE: you'll have to supply your own keys in order for this example to work properly
-  remoteStore, err := s3.NewStore("myBucket", "access-key", "secret-key")
-  if err != nil {
-    panic(err)
-  }
-  dataStore, err := chainstore.New(diskLru, remoteStore) // flows top-down
-  if err != nil {
-    panic(err)
-  }
+  // Since we've used the metricsManager above (metricsmgr), any calls to the boltstore
+  // and s3store will be measured. Next is to send metrics to librato, graphite, influxdb,
+  // whatever.. via github.com/rcrowley/go-metrics
+  // go librato.Librato(metrics.DefaultRegistry, 10e9, ...)
 
   //--
 
@@ -96,7 +121,6 @@ func main() {
 }
 
 /* OUTPUT:
-
 Example 1...
 Put 'k': [1 2 3] in the chain
 Grabbing 'k' from the chain: [1 2 3]
@@ -108,11 +132,10 @@ Put 'hi': [104 111 112 101 32 121 111 117 32 101 110 106 111 121] in the chain
 Delete 'hi' from boltdb. diskStore.Get(k) returns: []
 Let's ask the chain for 'hi': [104 111 112 101 32 121 111 117 32 101 110 106 111 121]
 Now, let's ask our diskStore again! diskStore.Get(k) returns: [104 111 112 101 32 121 111 117 32 101 110 106 111 121]
-
 */
 ```
 
-Currently supported stores: memcache (not the daemon), filesystem, boltdb, leveldb, s3, and a lru manager that can be layered ontop. The memcache implementation is just a simple ```map[string][]byte``` with the LRUManager for example.
+Currently supported stores: memory, filesystem, boltdb, leveldb, s3, a lru manager, and a metrics manager that can be layered ontop. You can chain these together for different behaviours, for example the `memstore` implementation is just a simple `map[string][]byte` with the LRU cache manager (`lrumgr`).
 
 Thx to other great projects:
 - github.com/boltdb/bolt
@@ -130,18 +153,7 @@ and smaller footprint everywhere
 - Timeout (with error notification) when adding an item to a store (ie. 60 seconds max to confirm)
 
 - Consider a 'config' structure to pass to stores that can configure things like:
-    * syncWrite bool - specifying for 2nd level chain stores if they be run in foreground
-      like the first store (strong consistency)
-
-    * For boltdb store, add option for ```fsyncTime uint``` which will queue up Puts over number
-      of seconds, and then write them in a go routine after that period, batching in Go makes
-      it wayy more efficient
-
     * For s3 store, add ACL with options: private, public_read, public_read_write, authenticated_read
-
-- Add ```Run(func(s Store))``` on the ```Chain``` that will execute the function on each
-  store context
-
 
 ## License
 
