@@ -3,8 +3,8 @@ package lrumgr
 import (
 	"testing"
 
-	"github.com/nulayer/chainstore"
-	"github.com/nulayer/chainstore/filestore"
+	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/filestore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

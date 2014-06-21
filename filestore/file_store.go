@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nulayer/chainstore"
+	"github.com/pressly/chainstore"
 )
 
 type fileStore struct {

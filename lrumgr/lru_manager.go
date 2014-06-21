@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"errors"
 
-	"github.com/nulayer/chainstore"
+	"github.com/pressly/chainstore"
 )
 
 type LruManager struct {

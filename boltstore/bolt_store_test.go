@@ -3,7 +3,7 @@ package boltstore
 import (
 	"testing"
 
-	"github.com/nulayer/chainstore"
+	"github.com/pressly/chainstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

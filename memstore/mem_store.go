@@ -3,7 +3,7 @@ package memstore
 import (
 	"sync"
 
-	"github.com/nulayer/chainstore/lrumgr"
+	"github.com/pressly/chainstore/lrumgr"
 )
 
 type memStore struct {

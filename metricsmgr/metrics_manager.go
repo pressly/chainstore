@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nulayer/chainstore"
+	"github.com/pressly/chainstore"
 	"github.com/rcrowley/go-metrics"
 )
 
