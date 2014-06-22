@@ -34,7 +34,7 @@ func (s *boltStore) Open() (err error) {
 		}
 	}
 
-	s.db, err = bolt.Open(s.storePath, 0660)
+	s.db, err = bolt.Open(s.storePath, 0660, nil)
 	if err != nil {
 		return
 	}
