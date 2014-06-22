@@ -1,15 +1,16 @@
-package memstore
+package memstore_test
 
 import (
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/memstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMemCacheStore(t *testing.T) {
 	var store chainstore.Store
-	store = New(10)
+	store = memstore.New(10)
 
 	Convey("MemCacheStore", t, func() {
 		e := store.Put("hi", []byte{1, 2, 3})

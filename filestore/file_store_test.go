@@ -1,9 +1,10 @@
-package filestore
+package filestore_test
 
 import (
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/filestore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -12,7 +13,7 @@ func TestFileStore(t *testing.T) {
 	var err error
 
 	Convey("Fsdb Open", t, func() {
-		store = New(chainstore.TempDir(), 0755)
+		store = filestore.New(chainstore.TempDir(), 0755)
 		err = nil
 		So(err, ShouldEqual, nil)
 

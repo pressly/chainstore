@@ -1,24 +1,25 @@
-package lrumgr
+package lrumgr_test
 
 import (
 	"testing"
 
 	"github.com/pressly/chainstore"
 	"github.com/pressly/chainstore/filestore"
+	"github.com/pressly/chainstore/lrumgr"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLRUManager(t *testing.T) {
 	var err error
 	var store chainstore.Store
-	var lru *LruManager
+	var lru *lrumgr.LruManager
 	var capacity int64 = 20
 
 	Convey("LRUManager", t, func() {
 		storeDir := chainstore.TempDir()
 
 		store = filestore.New(storeDir, 0755)
-		lru = New(capacity, store)
+		lru = lrumgr.New(capacity, store)
 
 		// based on 10% cushion
 		lru.Put("peter", []byte{1, 2, 3})

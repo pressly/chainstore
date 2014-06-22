@@ -1,9 +1,10 @@
-package levelstore
+package levelstore_test
 
 import (
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/levelstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -11,7 +12,7 @@ func TestLevelStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	store = New(chainstore.TempDir())
+	store = levelstore.New(chainstore.TempDir())
 	err = store.Open()
 	if err != nil {
 		t.Error(err)

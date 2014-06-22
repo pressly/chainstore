@@ -1,4 +1,4 @@
-package chainstoretest
+package chainstore_test
 
 import (
 	"log"

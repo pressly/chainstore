@@ -1,9 +1,10 @@
-package boltstore
+package boltstore_test
 
 import (
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/boltstore"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -11,7 +12,7 @@ func TestBoltStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	store = New(chainstore.TempDir()+"/test.db", "test")
+	store = boltstore.New(chainstore.TempDir()+"/test.db", "test")
 	err = store.Open()
 	if err != nil {
 		t.Error(err)
