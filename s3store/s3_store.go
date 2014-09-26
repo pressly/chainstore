@@ -45,9 +45,11 @@ func (s *s3Store) Put(key string, val []byte) error {
 
 func (s *s3Store) Get(key string) (val []byte, err error) {
 	val, err = s.bucket.Get(key)
-	s3err, _ := err.(*s3.Error)
-	if err != nil && s3err.StatusCode != 404 {
-		return nil, err
+	if err != nil {
+		s3err, ok := err.(*s3.Error)
+		if ok && s3err.Code != "NoSuchKey" {
+			return nil, err
+		}
 	}
 	return val, nil
 }
