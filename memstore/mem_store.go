@@ -28,7 +28,10 @@ func (s *memStore) Put(key string, val []byte) (err error) {
 }
 
 func (s *memStore) Get(key string) ([]byte, error) {
-	return s.data[key], nil
+	s.Lock()
+	val := s.data[key]
+	s.Unlock()
+	return val, nil
 }
 
 func (s *memStore) Del(key string) (err error) {

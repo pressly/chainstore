@@ -8,10 +8,12 @@ import (
 
 var (
 	ErrInvalidKey = errors.New("Invalid key")
+
+	KeyInvalidator = regexp.MustCompile(`(i?)[^a-z0-9\/_\-:\.]`)
 )
 
 const (
-	MAX_KEY_LEN = 256
+	MaxKeyLen = 256
 )
 
 type Store interface {
@@ -135,12 +137,8 @@ func (c *Chain) Del(key string) (err error) {
 	return
 }
 
-//--
-
 func IsValidKey(key string) bool {
-	// TODO: should this regexp be prebuilt..?
-	m, _ := regexp.MatchString(`(i?)[^a-z0-9\/_\-:\.]`, key)
-	return !m && len(key) <= MAX_KEY_LEN
+	return len(key) <= MaxKeyLen && !KeyInvalidator.MatchString(key)
 }
 
 func TempDir() string {

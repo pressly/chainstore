@@ -60,6 +60,9 @@ func TestBasicChain(t *testing.T) {
 			val, err = fs.Get("k")
 			So(err, ShouldEqual, nil)
 			So(len(val), ShouldEqual, 0)
+
+			val, err = chain.Get("woo!@#")
+			So(err, ShouldNotBeNil)
 		})
 	})
 }

@@ -1,6 +1,7 @@
 package lrumgr_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/pressly/chainstore"
@@ -35,5 +36,31 @@ func TestLRUManager(t *testing.T) {
 		err = lru.Put("agnes", []byte{20, 21, 22, 23, 24, 25})
 		So(lru.Capacity(), ShouldEqual, remaining)
 		So(err, ShouldEqual, nil)
+
+		var b []byte
+		var err error
+
+		// has been evicted..
+		b, err = lru.Get("peter")
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		if len(b) != 0 {
+			t.Error("byte arrays do not match")
+			t.Fail()
+		}
+
+		// exists
+		b, err = lru.Get("janet")
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		if !reflect.DeepEqual(b, []byte{11, 12, 13}) {
+			t.Error("byte arrays do not match")
+			t.Fail()
+		}
+
 	})
 }

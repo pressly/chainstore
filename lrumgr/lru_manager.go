@@ -3,11 +3,14 @@ package lrumgr
 import (
 	"container/list"
 	"errors"
+	"sync"
 
 	"github.com/pressly/chainstore"
 )
 
 type LruManager struct {
+	sync.Mutex
+
 	store    chainstore.Store
 	capacity int64 // in bytes
 	cushion  int64 // 10% of bytes of the capacity, to free up this much if it hits
@@ -59,14 +62,16 @@ func (m *LruManager) Put(key string, val []byte) (err error) {
 
 	valSize := int64(len(val))
 
+	m.Lock()
 	if item, exists := m.items[key]; exists {
 		m.list.MoveToFront(item.listElement)
 		m.capacity += (item.size - valSize)
 		item.size = valSize
-		m.promote(item)
+		// m.promote(item)
 	} else {
 		m.addItem(key, valSize)
 	}
+	m.Unlock()
 
 	// TODO: what if the value is larger then even the initial capacity?
 	// ..error..
@@ -76,24 +81,32 @@ func (m *LruManager) Put(key string, val []byte) (err error) {
 func (m *LruManager) Get(key string) (val []byte, err error) {
 	val, err = m.store.Get(key)
 	valSize := len(val)
+
+	m.Lock()
 	if item, exists := m.items[key]; exists {
-		m.promote(item)
+		// m.promote(item)
+		m.list.MoveToFront(item.listElement)
 	} else if valSize > 0 {
 		m.addItem(key, int64(valSize))
 	}
+	m.Unlock()
+
 	return
 }
 
 func (m *LruManager) Del(key string) (err error) {
+	m.Lock()
 	if item, exists := m.items[key]; exists {
 		m.evict(item)
 	}
+	m.Unlock()
+
 	return m.store.Del(key)
 }
 
-//--
-
 func (m *LruManager) Capacity() int64 {
+	m.Lock()
+	defer m.Unlock()
 	return m.capacity
 }
 
@@ -102,6 +115,8 @@ func (m *LruManager) Cushion() int64 {
 }
 
 func (m *LruManager) NumItems() int {
+	m.Lock()
+	defer m.Unlock()
 	return m.list.Len()
 }
 
@@ -110,10 +125,6 @@ func (m *LruManager) addItem(key string, size int64) {
 	item.listElement = m.list.PushFront(item)
 	m.items[key] = item
 	m.capacity -= size
-}
-
-func (m *LruManager) promote(item *lruItem) {
-	m.list.MoveToFront(item.listElement)
 }
 
 func (m *LruManager) evict(item *lruItem) {
@@ -128,15 +139,18 @@ func (m *LruManager) prune() {
 	}
 
 	for m.capacity < m.cushion {
+		m.Lock()
 		tail := m.list.Back()
 		if tail == nil {
 			return
 		}
 		item := tail.Value.(*lruItem)
+		m.Unlock()
+
 		m.Del(item.key)
 	}
 
-	if m.capacity < 0 {
-		m.prune()
-	}
+	// if m.capacity < 0 {
+	// 	m.prune()
+	// }
 }
