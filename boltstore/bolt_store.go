@@ -3,6 +3,7 @@ package boltstore
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -34,7 +35,7 @@ func (s *boltStore) Open() (err error) {
 		}
 	}
 
-	s.db, err = bolt.Open(s.storePath, 0660, nil)
+	s.db, err = bolt.Open(s.storePath, 0660, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return
 	}
@@ -59,7 +60,7 @@ func (s *boltStore) Close() (err error) {
 }
 
 func (s *boltStore) Put(key string, val []byte) (err error) {
-	err = s.db.Update(func(tx *bolt.Tx) error {
+	err = s.db.Batch(func(tx *bolt.Tx) error {
 		b := tx.Bucket(s.bucketName)
 		return b.Put([]byte(key), val)
 	})
