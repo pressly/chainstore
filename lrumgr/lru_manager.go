@@ -9,7 +9,7 @@ import (
 )
 
 type LruManager struct {
-	sync.Mutex
+	sync.RWMutex
 
 	store    chainstore.Store
 	capacity int64 // in bytes
@@ -58,7 +58,7 @@ func (m *LruManager) Close() (err error) {
 }
 
 func (m *LruManager) Put(key string, val []byte) (err error) {
-	defer m.prune() // free up space
+	defer m.Prune() // free up space
 
 	valSize := int64(len(val))
 
@@ -78,8 +78,8 @@ func (m *LruManager) Put(key string, val []byte) (err error) {
 	return m.store.Put(key, val)
 }
 
-func (m *LruManager) Get(key string) (val []byte, err error) {
-	val, err = m.store.Get(key)
+func (m *LruManager) Get(key string) ([]byte, error) {
+	val, err := m.store.Get(key)
 	valSize := len(val)
 
 	m.Lock()
@@ -91,7 +91,7 @@ func (m *LruManager) Get(key string) (val []byte, err error) {
 	}
 	m.Unlock()
 
-	return
+	return val, err
 }
 
 func (m *LruManager) Del(key string) (err error) {
@@ -104,19 +104,39 @@ func (m *LruManager) Del(key string) (err error) {
 	return m.store.Del(key)
 }
 
-func (m *LruManager) Capacity() int64 {
+func (m *LruManager) Prune() {
 	m.Lock()
 	defer m.Unlock()
+
+	for m.capacity < m.cushion {
+		tail := m.list.Back()
+		if tail == nil {
+			return
+		}
+		item := tail.Value.(*lruItem)
+		m.evict(item)
+		go m.store.Del(item.key)
+	}
+}
+
+func (m *LruManager) Capacity() int64 {
+	m.RLock()
+	defer m.RUnlock()
+
 	return m.capacity
 }
 
 func (m *LruManager) Cushion() int64 {
+	m.RLock()
+	defer m.RUnlock()
+
 	return m.cushion
 }
 
 func (m *LruManager) NumItems() int {
-	m.Lock()
-	defer m.Unlock()
+	m.RLock()
+	defer m.RUnlock()
+
 	return m.list.Len()
 }
 
@@ -131,26 +151,4 @@ func (m *LruManager) evict(item *lruItem) {
 	m.list.Remove(item.listElement)
 	delete(m.items, item.key)
 	m.capacity += item.size
-}
-
-func (m *LruManager) prune() {
-	if m.capacity > 0 {
-		return
-	}
-
-	for m.capacity < m.cushion {
-		m.Lock()
-		tail := m.list.Back()
-		if tail == nil {
-			return
-		}
-		item := tail.Value.(*lruItem)
-		m.Unlock()
-
-		m.Del(item.key)
-	}
-
-	// if m.capacity < 0 {
-	// 	m.prune()
-	// }
 }
