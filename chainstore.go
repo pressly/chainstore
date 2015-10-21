@@ -74,13 +74,10 @@ func (c *Chain) Open() error {
 
 	for i := range c.stores {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, c *Chain, i int) {
-			s := c.stores[i]
-
+		go func(s *storeWrapper) {
+			defer wg.Done()
 			s.setErr(s.Open())
-
-			wg.Done()
-		}(&wg, c, i)
+		}(c.stores[i])
 	}
 
 	wg.Wait()
@@ -90,18 +87,14 @@ func (c *Chain) Open() error {
 
 // Close closes all the stores.
 func (c *Chain) Close() error {
-	if err := c.firstErr(); err != nil {
-		return fmt.Errorf("Close failed due to a previous error: %q", err)
-	}
-
 	var wg sync.WaitGroup
 
 	for i := range c.stores {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, s *storeWrapper) {
+		go func(s *storeWrapper) {
+			defer wg.Done()
 			s.setErr(s.Close())
-			wg.Done()
-		}(&wg, c.stores[i])
+		}(c.stores[i])
 	}
 
 	wg.Wait()
@@ -194,10 +187,10 @@ func (c *Chain) doWithContext(ctx context.Context, fn storeFn) error {
 		for i := range c.stores {
 			wg.Add(1)
 
-			go func(wg *sync.WaitGroup, s *storeWrapper) {
+			go func(s *storeWrapper) {
+				defer wg.Done()
 				s.setErr(fn(s))
-				wg.Done()
-			}(&wg, c.stores[i])
+			}(c.stores[i])
 		}
 
 		wg.Wait()
