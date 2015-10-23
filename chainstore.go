@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -12,6 +13,10 @@ type storeFn func(s Store) error
 
 var (
 	keyInvalidator = regexp.MustCompile(`(i?)[^a-z0-9\/_\-:\.]`)
+)
+
+var (
+	DefaultTimeout = time.Millisecond * 3500
 )
 
 const (
@@ -39,9 +44,6 @@ func (s *storeWrapper) err() error {
 }
 
 func (s *storeWrapper) setErr(err error) {
-	if err == nil {
-		return
-	}
 	s.errMu.Lock()
 	defer s.errMu.Unlock()
 	s.errE = err
@@ -134,6 +136,14 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 	close(nextStore)
 
 	putBack := make(chan Store, len(c.stores))
+	firstVal := make(chan []byte)
+
+	go func() {
+		val := <-firstVal
+		for store := range putBack {
+			go store.Put(ctx, key, val)
+		}
+	}()
 
 	for {
 		select {
@@ -145,12 +155,16 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 			}
 			val, err := store.Get(ctx, key)
 			if err != nil {
+				if err == ErrTimeout {
+					return nil, err
+				}
 				putBack <- store
 				continue
 			}
-			for store := range putBack {
-				go store.Put(ctx, key, val)
-			}
+
+			firstVal <- val
+			close(putBack)
+
 			return val, nil
 		}
 	}
@@ -175,44 +189,38 @@ func (c *Chain) Del(ctx context.Context, key string) (err error) {
 }
 
 func (c *Chain) doWithContext(ctx context.Context, fn storeFn) error {
-	errCh := make(chan error, 1)
+	var wg sync.WaitGroup
 
-	go func() {
-		var wg sync.WaitGroup
+	for i := range c.stores {
+		wg.Add(1)
 
-		for i := range c.stores {
-			wg.Add(1)
-
-			go func(s *storeWrapper) {
-				defer wg.Done()
-				s.setErr(fn(s))
-			}(c.stores[i])
-		}
-
-		wg.Wait()
-
-		errCh <- c.firstErr()
-	}()
-
-	select {
-	case <-ctx.Done():
-		c.Close() // Close should unlock pending requests.
-		<-errCh
-		return ctx.Err()
-	case err := <-errCh:
-		return err
+		go func(s *storeWrapper) {
+			defer wg.Done()
+			s.setErr(fn(s))
+		}(c.stores[i])
 	}
 
-	panic("reached")
+	wg.Wait()
+
+	return c.firstErr()
 }
 
 func (c *Chain) firstErr() error {
+	var rerr error
 	for i := range c.stores {
 		if err := c.stores[i].err(); err != nil {
-			return err
+			rerr = err
+			if err == ErrTimeout {
+				// We can recover from this kind of error, so we return it and try
+				// again.
+				c.stores[i].setErr(nil)
+				return err
+			} else {
+				break
+			}
 		}
 	}
-	return nil
+	return rerr
 }
 
 func isValidKey(key string) bool {

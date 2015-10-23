@@ -17,7 +17,7 @@ func TestMockStoreSuccess(t *testing.T) {
 
 	ctx, _ := context.WithCancel(context.Background())
 
-	store = chainstore.Store(New(&Config{
+	store = chainstore.New(New(&Config{
 		Capacity:    100,
 		SuccessRate: 1.0, // always succeeds.
 	}))
@@ -60,7 +60,7 @@ func TestMockStoreFail(t *testing.T) {
 
 	ctx, _ := context.WithCancel(context.Background())
 
-	store = chainstore.Store(New(&Config{
+	store = chainstore.New(New(&Config{
 		Capacity:    100,
 		SuccessRate: 0.0, // always succeeds.
 	}))
@@ -180,4 +180,47 @@ func TestMockStoreCancelWithFunc(t *testing.T) {
 
 	_, err = store.Get(ctx, "nil")
 	assert.NotNil(err)
+}
+
+// TestMockStoreCancelWithDefaultTimeout tests automatic operation cancellation
+// and posterior recover.
+func TestMockStoreCancelWithDefaultTimeout(t *testing.T) {
+	var store chainstore.Store
+	var err error
+
+	ctx, _ := context.WithCancel(context.Background())
+
+	cfg := &Config{
+		Capacity:    100,
+		SuccessRate: 1.0,             // always succeeds.
+		Delay:       time.Second * 1, // any operation takes 0.5s.
+	}
+
+	store = chainstore.New(New(cfg))
+
+	assert := assert.New(t)
+
+	// This is going to fail because the timeout is lower than the delay.
+	cfg.Timeout = time.Millisecond * 500
+
+	err = store.Put(ctx, "nil", nil)
+	assert.Equal(chainstore.ErrTimeout, err)
+
+	// This is going to succeed because the timeout is greater than the delay.
+	cfg.Timeout = time.Millisecond * 1500
+
+	err = store.Put(ctx, "nil", nil)
+	assert.Nil(err)
+
+	// This is going to fail because the timeout is lower than the delay.
+	cfg.Timeout = time.Millisecond * 500
+
+	_, err = store.Get(ctx, "nil")
+	assert.Equal(chainstore.ErrTimeout, err)
+
+	// This is going to succeed because the timeout is greater than the delay.
+	cfg.Timeout = time.Millisecond * 1500
+
+	_, err = store.Get(ctx, "nil")
+	assert.Nil(err)
 }
