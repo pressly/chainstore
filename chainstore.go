@@ -136,14 +136,6 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 	close(nextStore)
 
 	putBack := make(chan Store, len(c.stores))
-	firstVal := make(chan []byte)
-
-	go func() {
-		val := <-firstVal
-		for store := range putBack {
-			go store.Put(ctx, key, val)
-		}
-	}()
 
 	for {
 		select {
@@ -153,7 +145,9 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 			if !ok {
 				return nil, ErrNoSuchKey
 			}
+
 			val, err := store.Get(ctx, key)
+
 			if err != nil {
 				if err == ErrTimeout {
 					return nil, err
@@ -162,8 +156,11 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 				continue
 			}
 
-			firstVal <- val
 			close(putBack)
+
+			for store := range putBack {
+				go store.Put(ctx, key, val)
+			}
 
 			return val, nil
 		}
