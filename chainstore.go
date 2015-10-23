@@ -127,36 +127,32 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 		return nil, fmt.Errorf("Open failed due to a previous error: %q", err)
 	}
 
-	errCh := make(chan error, 1)
+	nextStore := make(chan Store, len(c.stores))
+	for _, store := range c.stores {
+		nextStore <- store
+	}
+	close(nextStore)
 
-	go func() {
-		for i := range c.stores {
-			s := c.stores[i]
+	putBack := make(chan Store, len(c.stores))
 
-			val, err = s.Get(ctx, key)
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case store, ok := <-nextStore:
+			if !ok {
+				return nil, ErrNoSuchKey
+			}
+			val, err := store.Get(ctx, key)
 			if err != nil {
-				errCh <- err
-				return
+				putBack <- store
+				continue
 			}
-
-			if val != nil {
-				for j := i - 1; j >= 0; j++ {
-					go c.stores[i].Put(ctx, key, val)
-				}
-				errCh <- nil
-				return
+			for store := range putBack {
+				go store.Put(ctx, key, val)
 			}
+			return val, nil
 		}
-		errCh <- ErrNoSuchKey
-	}()
-
-	select {
-	case <-ctx.Done():
-		c.Close() // Close should unlock pending requests.
-		<-errCh
-		return nil, ctx.Err()
-	case err := <-errCh:
-		return val, err
 	}
 
 	panic("reached")
