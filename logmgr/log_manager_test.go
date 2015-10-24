@@ -1,6 +1,7 @@
-package s3store
+package logmgr
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -9,19 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
-	bucketID  string
-	accessKey string
-	secretKey string
-)
-
-func init() {
-	bucketID = os.Getenv("S3_BUCKET")
-	accessKey = os.Getenv("S3_ACCESS_KEY")
-	secretKey = os.Getenv("S3_SECRET_KEY")
-}
-
-func TestS3Store(t *testing.T) {
+func TestLogMgrStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
@@ -29,7 +18,9 @@ func TestS3Store(t *testing.T) {
 
 	assert := assert.New(t)
 
-	store = chainstore.New(New(bucketID, accessKey, secretKey))
+	logger := log.New(os.Stdout, "", 0)
+
+	store = chainstore.New(New(logger, "test"))
 	err = store.Open()
 	assert.Nil(err)
 	defer store.Close()
@@ -41,10 +32,10 @@ func TestS3Store(t *testing.T) {
 	assert.Nil(e2)
 
 	// Get those objects
-	v1, _ := store.Get(ctx, "hi")
-	v2, _ := store.Get(ctx, "bye")
-	assert.Equal(v1, []byte{1, 2, 3})
-	assert.Equal(v2, []byte{4, 5, 6})
+	_, e1 = store.Get(ctx, "hi")
+	_, e2 = store.Get(ctx, "bye")
+	assert.Equal(e1, nil)
+	assert.Equal(e2, nil)
 
 	// Delete those objects
 	e1 = store.Del(ctx, "hi")

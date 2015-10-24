@@ -4,6 +4,7 @@ import (
 	"errors"
 )
 
+// Public error messages.
 var (
 	ErrInvalidKey    = errors.New("Invalid key")
 	ErrMissingStores = errors.New("No stores provided")

@@ -1,49 +1,53 @@
-package boltstore_test
+package boltstore
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/pressly/chainstore"
-	"github.com/pressly/chainstore/boltstore"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
+
+func tempDir() string {
+	path, _ := ioutil.TempDir("", "chainstore-")
+	return path
+}
 
 func TestBoltStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	store = boltstore.New(chainstore.TempDir()+"/test.db", "test")
+	ctx, _ := context.WithCancel(context.Background())
+
+	store = chainstore.New(New(tempDir()+"/test.db", "test"))
+
+	assert := assert.New(t)
+
 	err = store.Open()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Nil(err)
+
 	defer store.Close() // does this get called?
 
-	Convey("Boltdb Open", t, func() {
+	// Put a bunch of objects
+	e1 := store.Put(ctx, "hi", []byte{1, 2, 3})
+	e2 := store.Put(ctx, "bye", []byte{4, 5, 6})
+	assert.Equal(e1, nil)
+	assert.Equal(e2, nil)
 
-		Convey("Put a bunch of objects", func() {
-			e1 := store.Put("hi", []byte{1, 2, 3})
-			e2 := store.Put("bye", []byte{4, 5, 6})
-			So(e1, ShouldEqual, nil)
-			So(e2, ShouldEqual, nil)
-		})
+	// Get those objects
+	v1, _ := store.Get(ctx, "hi")
+	v2, _ := store.Get(ctx, "bye")
+	assert.Equal(v1, []byte{1, 2, 3})
+	assert.Equal(v2, []byte{4, 5, 6})
 
-		Convey("Get those objects", func() {
-			v1, _ := store.Get("hi")
-			v2, _ := store.Get("bye")
-			So(v1, ShouldResemble, []byte{1, 2, 3})
-			So(v2, ShouldResemble, []byte{4, 5, 6})
-		})
+	// Delete those objects
+	e1 = store.Del(ctx, "hi")
+	e2 = store.Del(ctx, "bye")
+	assert.Equal(e1, nil)
+	assert.Equal(e2, nil)
 
-		Convey("Delete those objects", func() {
-			e1 := store.Del("hi")
-			e2 := store.Del("bye")
-			So(e1, ShouldEqual, nil)
-			So(e2, ShouldEqual, nil)
+	v, _ := store.Get(ctx, "hi")
+	assert.Equal(len(v), 0)
 
-			v, _ := store.Get("hi")
-			So(len(v), ShouldEqual, 0)
-		})
-
-	})
 }

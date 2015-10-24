@@ -1,27 +1,15 @@
-package s3store
+package metricsmgr
 
 import (
-	"os"
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/rcrowley/go-metrics"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
-var (
-	bucketID  string
-	accessKey string
-	secretKey string
-)
-
-func init() {
-	bucketID = os.Getenv("S3_BUCKET")
-	accessKey = os.Getenv("S3_ACCESS_KEY")
-	secretKey = os.Getenv("S3_SECRET_KEY")
-}
-
-func TestS3Store(t *testing.T) {
+func TestMetricsMgrStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
@@ -29,7 +17,7 @@ func TestS3Store(t *testing.T) {
 
 	assert := assert.New(t)
 
-	store = chainstore.New(New(bucketID, accessKey, secretKey))
+	store = chainstore.New(New("ns", metrics.DefaultRegistry))
 	err = store.Open()
 	assert.Nil(err)
 	defer store.Close()
@@ -39,12 +27,6 @@ func TestS3Store(t *testing.T) {
 	e2 := store.Put(ctx, "bye", []byte{4, 5, 6})
 	assert.Nil(e1)
 	assert.Nil(e2)
-
-	// Get those objects
-	v1, _ := store.Get(ctx, "hi")
-	v2, _ := store.Get(ctx, "bye")
-	assert.Equal(v1, []byte{1, 2, 3})
-	assert.Equal(v2, []byte{4, 5, 6})
 
 	// Delete those objects
 	e1 = store.Del(ctx, "hi")

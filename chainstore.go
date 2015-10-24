@@ -16,6 +16,7 @@ var (
 )
 
 var (
+	// DefaultTimeout must be used by stores as timeout.
 	DefaultTimeout = time.Millisecond * 3500
 )
 
@@ -23,6 +24,7 @@ const (
 	maxKeyLen = 256
 )
 
+// Store represents a store than can be used as a chainstore link.
 type Store interface {
 	Open() error
 	Close() error
@@ -104,6 +106,7 @@ func (c *Chain) Close() error {
 	return c.firstErr()
 }
 
+// Put propagates a key-value pair to all stores.
 func (c *Chain) Put(ctx context.Context, key string, val []byte) (err error) {
 	if !isValidKey(key) {
 		return ErrInvalidKey
@@ -120,6 +123,9 @@ func (c *Chain) Put(ctx context.Context, key string, val []byte) (err error) {
 	return c.doWithContext(ctx, fn)
 }
 
+// Get returns the value identified by the given key. This is a sequential
+// scan. When a value is found it gets propagated to all the stores that do not
+// have it.
 func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 	if !isValidKey(key) {
 		return nil, ErrInvalidKey
@@ -142,13 +148,14 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case store, ok := <-nextStore:
+
 			if !ok {
 				return nil, ErrNoSuchKey
 			}
 
 			val, err := store.Get(ctx, key)
 
-			if err != nil {
+			if err != nil || len(val) == 0 {
 				if err == ErrTimeout {
 					return nil, err
 				}
@@ -169,6 +176,7 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 	panic("reached")
 }
 
+// Del removes a key from all stores.
 func (c *Chain) Del(ctx context.Context, key string) (err error) {
 	if !isValidKey(key) {
 		return ErrInvalidKey
@@ -212,9 +220,8 @@ func (c *Chain) firstErr() error {
 				// again.
 				c.stores[i].setErr(nil)
 				return err
-			} else {
-				break
 			}
+			break
 		}
 	}
 	return rerr
