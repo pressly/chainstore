@@ -50,11 +50,9 @@ func main() {
 					boltstore.New("/tmp/store.db", "myBucket"),
 				),
 			),
-			chainstore.Async( // calls stores in the async chain in a goroutine
-				metricsmgr.New("chainstore.ex.s3", nil,
-					// NOTE: you'll have to supply your own keys in order for this example to work properly
-					s3store.New("myBucket", "access-key", "secret-key"),
-				),
+			metricsmgr.New("chainstore.ex.s3", nil,
+				// NOTE: you'll have to supply your own keys in order for this example to work properly
+				s3store.New("myBucket", "access-key", "secret-key"),
 			),
 		)
 	*/
