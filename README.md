@@ -198,6 +198,14 @@ Thx to other great projects:
 - [github.com/mitchellh/goamz](https://github.com/boltdb/bolt)
 - [github.com/syndtr/goleveldb](https://github.com/boltdb/bolt)
 
+## Changelog
+
+- Oct 2015. Added support for
+  [context.Context](https://godoc.org/golang.org/x/net/context). Please
+  checkout tag
+  [before-context](https://github.com/pressly/chainstore/tree/before-context)
+  to browse the original source tree.
+
 # TODO / Ideas
 
 - Error channel where bad puts are communicated so they can be properly handled
