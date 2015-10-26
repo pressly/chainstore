@@ -15,7 +15,7 @@ func TestLRUManager(t *testing.T) {
 	var lru *lruManager
 	var capacity int64 = 20
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	store = filestore.New(filestore.TempDir(), 0755)
 

@@ -13,7 +13,7 @@ func TestMemCacheStore(t *testing.T) {
 	var err error
 	var obj []byte
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	store = chainstore.New(New(10))
 

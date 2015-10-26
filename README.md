@@ -44,7 +44,7 @@ func init() {
 }
 
 func main() {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	diskStore := lrumgr.New(500*1024*1024, // 500MB of working data
 		metricsmgr.New("chainstore.ex.bolt", nil,

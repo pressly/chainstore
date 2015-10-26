@@ -25,7 +25,7 @@ func TestS3Store(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	assert := assert.New(t)
 

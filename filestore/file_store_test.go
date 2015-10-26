@@ -18,7 +18,7 @@ func TestFileStore(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	store = chainstore.New(New(tempDir(), 0755))
 

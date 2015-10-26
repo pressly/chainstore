@@ -15,7 +15,7 @@ func TestMockStoreSuccess(t *testing.T) {
 	var err error
 	var obj []byte
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	store = chainstore.New(New(&Config{
 		Capacity:    100,
@@ -58,7 +58,7 @@ func TestMockStoreFail(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	store = chainstore.New(New(&Config{
 		Capacity:    100,
@@ -188,7 +188,7 @@ func TestMockStoreCancelWithDefaultTimeout(t *testing.T) {
 	var store chainstore.Store
 	var err error
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 
 	cfg := &Config{
 		Capacity:    100,
