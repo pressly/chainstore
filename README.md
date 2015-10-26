@@ -224,7 +224,7 @@ Thx to other great projects:
 
 ## License
 
-> Copyright (c) 2014 Peter Kieltyka / Pressly Inc. www.pressly.com
+> Copyright (c) 2014-2015 Peter Kieltyka / Pressly Inc. www.pressly.com
 >
 > MIT License
 >
