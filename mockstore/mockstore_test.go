@@ -24,7 +24,7 @@ func TestMockStoreSuccess(t *testing.T) {
 
 	assert := assert.New(t)
 
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.Nil(err)
 
 	err = store.Put(ctx, "hi", []byte{1, 2, 3})
@@ -48,9 +48,9 @@ func TestMockStoreSuccess(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(len(obj), 8)
 
-	obj, err = store.Get(ctx, "nil")
+	obj, err = store.Get(ctx, "notnil")
 	assert.Nil(err)
-	assert.Equal(len(obj), 0)
+	assert.Equal(len(obj), 9)
 }
 
 // TestMockStoreFail creates and test a mockstore that always fails.
@@ -67,7 +67,7 @@ func TestMockStoreFail(t *testing.T) {
 
 	assert := assert.New(t)
 
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.NotNil(err)
 
 	err = store.Put(ctx, "hi", []byte{1, 2, 3})
@@ -88,7 +88,7 @@ func TestMockStoreFail(t *testing.T) {
 	_, err = store.Get(ctx, "bye")
 	assert.NotNil(err)
 
-	_, err = store.Get(ctx, "nil")
+	_, err = store.Get(ctx, "notnil")
 	assert.NotNil(err)
 }
 
@@ -109,7 +109,7 @@ func TestMockStoreCancelWithTimeout(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*500)
 
 	// After 0.5s this all is going to fail, because the context timed out.
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.NotNil(err)
 
 	err = store.Put(ctx, "hi", []byte{1, 2, 3})
@@ -130,7 +130,7 @@ func TestMockStoreCancelWithTimeout(t *testing.T) {
 	_, err = store.Get(ctx, "bye")
 	assert.NotNil(err)
 
-	_, err = store.Get(ctx, "nil")
+	_, err = store.Get(ctx, "notnil")
 	assert.NotNil(err)
 }
 
@@ -156,7 +156,7 @@ func TestMockStoreCancelWithFunc(t *testing.T) {
 	assert := assert.New(t)
 
 	// This is going to succeed.
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.Nil(err)
 
 	// This will fail because after 1.5s the context will send a cancellation signal.
@@ -178,7 +178,7 @@ func TestMockStoreCancelWithFunc(t *testing.T) {
 	_, err = store.Get(ctx, "bye")
 	assert.NotNil(err)
 
-	_, err = store.Get(ctx, "nil")
+	_, err = store.Get(ctx, "notnil")
 	assert.NotNil(err)
 }
 
@@ -203,24 +203,24 @@ func TestMockStoreCancelWithDefaultTimeout(t *testing.T) {
 	// This is going to fail because the timeout is lower than the delay.
 	cfg.Timeout = time.Millisecond * 500
 
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.Equal(chainstore.ErrTimeout, err)
 
 	// This is going to succeed because the timeout is greater than the delay.
 	cfg.Timeout = time.Millisecond * 1500
 
-	err = store.Put(ctx, "nil", nil)
+	err = store.Put(ctx, "notnil", []byte("something"))
 	assert.Nil(err)
 
 	// This is going to fail because the timeout is lower than the delay.
 	cfg.Timeout = time.Millisecond * 500
 
-	_, err = store.Get(ctx, "nil")
+	_, err = store.Get(ctx, "notnil")
 	assert.Equal(chainstore.ErrTimeout, err)
 
 	// This is going to succeed because the timeout is greater than the delay.
 	cfg.Timeout = time.Millisecond * 1500
 
-	_, err = store.Get(ctx, "nil")
+	_, err = store.Get(ctx, "notnil")
 	assert.Nil(err)
 }
