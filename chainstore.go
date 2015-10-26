@@ -54,16 +54,28 @@ func (s *storeWrapper) setErr(err error) {
 // Chain represents a store chain.
 type Chain struct {
 	stores []*storeWrapper
+	async  bool
 }
 
-// New creates a new store chain backed by the passed stores.
-func New(stores ...Store) Store {
+func newChain(stores ...Store) *Chain {
 	c := &Chain{
 		stores: make([]*storeWrapper, 0, len(stores)),
 	}
 	for _, s := range stores {
 		c.stores = append(c.stores, &storeWrapper{Store: s})
 	}
+	return c
+}
+
+// New creates a new store chain backed by the passed stores.
+func New(stores ...Store) Store {
+	return newChain(stores...)
+}
+
+// Async creates and async store.
+func Async(stores ...Store) Store {
+	c := newChain(stores...)
+	c.async = true
 	return c
 }
 
@@ -193,21 +205,31 @@ func (c *Chain) Del(ctx context.Context, key string) (err error) {
 	return c.doWithContext(ctx, fn)
 }
 
-func (c *Chain) doWithContext(ctx context.Context, fn storeFn) error {
-	var wg sync.WaitGroup
+func (c *Chain) doWithContext(ctx context.Context, fn storeFn) (err error) {
+	doAndWait := func() (err error) {
+		var wg sync.WaitGroup
 
-	for i := range c.stores {
-		wg.Add(1)
+		for i := range c.stores {
+			wg.Add(1)
 
-		go func(s *storeWrapper) {
-			defer wg.Done()
-			s.setErr(fn(s))
-		}(c.stores[i])
+			go func(s *storeWrapper) {
+				defer wg.Done()
+				s.setErr(fn(s))
+			}(c.stores[i])
+		}
+
+		wg.Wait()
+
+		return c.firstErr()
 	}
 
-	wg.Wait()
+	if c.async {
+		go doAndWait()
+	} else {
+		err = doAndWait()
+	}
 
-	return c.firstErr()
+	return err
 }
 
 func (c *Chain) firstErr() error {
