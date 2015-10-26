@@ -7,7 +7,13 @@ import (
 	"github.com/pressly/chainstore/filestore"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
+	"io/ioutil"
 )
+
+func tempDir() string {
+	path, _ := ioutil.TempDir("", "chainstore-")
+	return path
+}
 
 func TestLRUManager(t *testing.T) {
 	var err error
@@ -17,7 +23,7 @@ func TestLRUManager(t *testing.T) {
 
 	ctx := context.Background()
 
-	store = filestore.New(filestore.TempDir(), 0755)
+	store = filestore.New(tempDir(), 0755)
 
 	lru = newLruManager(capacity, store)
 
