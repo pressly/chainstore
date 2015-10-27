@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pressly/chainstore"
+	"github.com/pressly/chainstore/mockstore"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -20,7 +21,11 @@ func TestLogMgrStore(t *testing.T) {
 
 	logger := log.New(os.Stdout, "", 0)
 
-	store = chainstore.New(New(logger, "test"))
+	cfg := mockstore.Config{
+		SuccessRate: 1.0,
+	}
+
+	store = chainstore.New(New(logger, "test"), mockstore.New(&cfg))
 	err = store.Open()
 	assert.Nil(err)
 	defer store.Close()
