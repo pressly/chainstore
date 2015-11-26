@@ -94,7 +94,7 @@ func TestAsyncChain(t *testing.T) {
 		ms,
 		chainstore.Async(
 			logmgr.New(logger, "async"),
-			metricsmgr.New("chaintest", nil,
+			metricsmgr.New("chaintest",
 				fs,
 				lrumgr.New(100, bs),
 			),

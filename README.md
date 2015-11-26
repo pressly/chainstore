@@ -47,12 +47,12 @@ func main() {
 	ctx := context.Background()
 
 	diskStore := lrumgr.New(500*1024*1024, // 500MB of working data
-		metricsmgr.New("chainstore.ex.bolt", nil,
+		metricsmgr.New("chainstore.ex.bolt",
 			boltstore.New("/tmp/store.db", "myBucket"),
 		),
 	)
 
-	remoteStore := metricsmgr.New("chainstore.ex.s3", nil,
+	remoteStore := metricsmgr.New("chainstore.ex.s3",
 		// NOTE: you'll have to supply your own keys in order for this example to work properly
 		s3store.New(bucketID, accessKey, secretKey),
 	)
@@ -63,11 +63,11 @@ func main() {
 	/*
 		dataStore := chainstore.New(
 			lrumgr.New(500*1024*1024, // 500MB of working data
-				metricsmgr.New("chainstore.ex.bolt", nil,
+				metricsmgr.New("chainstore.ex.bolt",
 					boltstore.New("/tmp/store.db", "myBucket"),
 				),
 			),
-			metricsmgr.New("chainstore.ex.s3", nil,
+			metricsmgr.New("chainstore.ex.s3",
 				// NOTE: you'll have to supply your own keys in order for this example to work properly
 				s3store.New("myBucket", "access-key", "secret-key"),
 			),
