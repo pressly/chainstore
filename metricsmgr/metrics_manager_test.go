@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/pressly/chainstore"
-	"github.com/rcrowley/go-metrics"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -17,7 +16,7 @@ func TestMetricsMgrStore(t *testing.T) {
 
 	assert := assert.New(t)
 
-	store = chainstore.New(New("ns", metrics.DefaultRegistry))
+	store = chainstore.New(New("ns"))
 	err = store.Open()
 	assert.Nil(err)
 	defer store.Close()

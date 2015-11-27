@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/pressly/chainstore"
-	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 )
 
 type metricsManager struct {
 	namespace string
-	registry  metrics.Registry
 	chain     chainstore.Store
 }
 
 // New returns a metrics store.
-func New(namespace string, registry metrics.Registry, stores ...chainstore.Store) chainstore.Store {
+func New(namespace string, stores ...chainstore.Store) chainstore.Store {
 	return &metricsManager{
 		namespace: namespace,
-		registry:  registry,
 		chain:     chainstore.New(stores...),
 	}
 }
@@ -80,10 +78,7 @@ func (m *metricsManager) Del(ctx context.Context, key string) (err error) {
 }
 
 func (m *metricsManager) measure(method string, fn func() ([]byte, error)) ([]byte, error) {
-	ns := fmt.Sprintf("%s.%s", m.namespace, method)
-	metric := metrics.GetOrRegisterTimer(ns, m.registry)
-	t := time.Now()
-	val, err := fn()
-	metric.UpdateSince(t)
-	return val, err
+	name := fmt.Sprintf("%s.%s", m.namespace, method)
+	defer metrics.MeasureSince([]string{name}, time.Now())
+	return fn()
 }
