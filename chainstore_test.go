@@ -1,6 +1,8 @@
 package chainstore_test
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,7 +16,6 @@ import (
 	"github.com/pressly/chainstore/lrumgr"
 	"github.com/pressly/chainstore/memstore"
 	"github.com/pressly/chainstore/metricsmgr"
-
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -81,9 +82,8 @@ func TestAsyncChain(t *testing.T) {
 	var err error
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-
 	storeDir := tempDir()
-	err = nil
+	bgErrors := make([]string, 0)
 
 	ms = memstore.New(100)
 	fs = filestore.New(storeDir+"/filestore", 0755)
@@ -93,7 +93,12 @@ func TestAsyncChain(t *testing.T) {
 		logmgr.New(logger, ""),
 		ms,
 		chainstore.Async(
+			func(err error) {
+				log.Println("async error:", err)
+				bgErrors = append(bgErrors, fmt.Sprintf("async error: %v", err))
+			},
 			logmgr.New(logger, "async"),
+			&testStore{},
 			metricsmgr.New("chaintest",
 				fs,
 				lrumgr.New(100, bs),
@@ -102,7 +107,6 @@ func TestAsyncChain(t *testing.T) {
 	)
 
 	ctx := context.Background()
-
 	assert := assert.New(t)
 
 	err = chain.Open()
@@ -130,4 +134,44 @@ func TestAsyncChain(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(val, v)
 
+	//--
+
+	// Lets make an error in async store
+	assert.Empty(bgErrors)
+
+	err = chain.Put(ctx, "bad", []byte("v"))
+	assert.Nil(err) // no error because sync store took it fine
+
+	time.Sleep(time.Second * 1) // wait for async operation..
+	assert.NotEmpty(bgErrors)
+
+}
+
+type testStore struct{}
+
+func (s *testStore) Open() (err error)  { return }
+func (s *testStore) Close() (err error) { return }
+
+func (s *testStore) Put(ctx context.Context, key string, val []byte) (err error) {
+	if key == "bad" {
+		return errors.New("testStore: err")
+	} else {
+		return nil
+	}
+}
+
+func (s *testStore) Get(ctx context.Context, key string) (data []byte, err error) {
+	if key == "bad" {
+		return nil, errors.New("testStore: err")
+	} else {
+		return []byte("ok"), nil
+	}
+}
+
+func (s *testStore) Del(ctx context.Context, key string) (err error) {
+	if key == "bad" {
+		return errors.New("testStore: err")
+	} else {
+		return nil
+	}
 }

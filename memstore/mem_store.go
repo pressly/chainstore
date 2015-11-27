@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var _ = chainstore.Store(&memStore{})
+var _ chainstore.Store = &memStore{}
 
 type memStore struct {
 	sync.RWMutex

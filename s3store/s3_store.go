@@ -34,9 +34,7 @@ func (s *s3Store) Open() (err error) {
 
 	s.conn = s3.New(auth, aws.USEast) // TODO: hardcoded region..?
 	s.conn.HTTPClient = func() *http.Client {
-		c := &http.Client{
-			Timeout: chainstore.DefaultTimeout,
-		}
+		c := &http.Client{}
 		return c
 	}
 	s.bucket = s.conn.Bucket(s.BucketID)

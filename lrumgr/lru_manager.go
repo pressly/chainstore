@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var _ = chainstore.Store(&lruManager{})
+var _ chainstore.Store = &lruManager{}
 
 type lruManager struct {
 	sync.Mutex

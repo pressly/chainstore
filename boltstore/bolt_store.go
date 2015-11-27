@@ -37,7 +37,7 @@ func (s *boltStore) Open() (err error) {
 		}
 	}
 
-	s.db, err = bolt.Open(s.storePath, 0660, &bolt.Options{Timeout: chainstore.DefaultTimeout})
+	s.db, err = bolt.Open(s.storePath, 0660, nil)
 	if err != nil {
 		return
 	}
