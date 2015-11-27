@@ -178,7 +178,9 @@ func (c *Chain) Get(ctx context.Context, key string) (val []byte, err error) {
 			close(putBack)
 
 			for store := range putBack {
-				go store.Put(ctx, key, val)
+				go func() {
+					_ = store.Put(ctx, key, val)
+				}()
 			}
 
 			return val, nil
@@ -224,7 +226,9 @@ func (c *Chain) doWithContext(ctx context.Context, fn storeFn) (err error) {
 	}
 
 	if c.async {
-		go doAndWait()
+		go func() {
+			_ = doAndWait()
+		}()
 	} else {
 		err = doAndWait()
 	}

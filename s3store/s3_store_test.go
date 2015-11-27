@@ -1,3 +1,5 @@
+// +build !skipexternal
+
 package s3store
 
 import (
