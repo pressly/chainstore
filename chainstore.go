@@ -85,9 +85,7 @@ func (c *Chain) Put(ctx context.Context, key string, val []byte) (err error) {
 		return
 	}
 	if c.async {
-		go func() {
-			_ = fn()
-		}()
+		go fn()
 	} else {
 		err = fn()
 	}
@@ -151,9 +149,7 @@ func (c *Chain) Del(ctx context.Context, key string) (err error) {
 		return
 	}
 	if c.async {
-		go func() {
-			_ = fn()
-		}()
+		go fn()
 	} else {
 		err = fn()
 	}

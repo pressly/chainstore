@@ -5,9 +5,5 @@ go:
   - tip
 
 script:
-  - go get github.com/kisielk/errcheck
   - go get -t ./...
-
   - go test -tags "skipexternal" -v -race ./...
-  - errcheck github.com/pressly/chainstore
-
