@@ -86,8 +86,6 @@ func TestAsyncChain(t *testing.T) {
 
 	var errored atomic.Value
 
-	errored.Store(false)
-
 	ms = memstore.New(100)
 	fs = filestore.New(storeDir+"/filestore", 0755)
 	bs = boltstore.New(storeDir+"/boltstore/bolt.db", "test")
@@ -140,13 +138,13 @@ func TestAsyncChain(t *testing.T) {
 	//--
 
 	// Lets make an error in async store
-	assert.False(errored.Load().(bool))
+	assert.Nil(errored.Load())
 
 	err = chain.Put(ctx, "bad", []byte("v"))
 	assert.Nil(err) // no error because sync store took it fine
 
 	time.Sleep(time.Second * 1) // wait for async operation..
-	assert.True(errored.Load().(bool))
+	assert.NotNil(errored.Load())
 }
 
 type testStore struct{}
