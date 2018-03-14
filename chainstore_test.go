@@ -15,7 +15,6 @@ import (
 	"github.com/pressly/chainstore/logmgr"
 	"github.com/pressly/chainstore/lrumgr"
 	"github.com/pressly/chainstore/memstore"
-	"github.com/pressly/chainstore/metricsmgr"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -100,7 +99,7 @@ func TestAsyncChain(t *testing.T) {
 			},
 			logmgr.New(logger, "async"),
 			&testStore{},
-			metricsmgr.New("chaintest",
+			chainstore.New(
 				fs,
 				lrumgr.New(100, bs),
 			),
