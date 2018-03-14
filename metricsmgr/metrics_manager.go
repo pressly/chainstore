@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pressly/chainstore"
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 type metricsManager struct {
