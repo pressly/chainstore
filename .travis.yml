@@ -1,8 +1,7 @@
 language: go
 go:
-  - 1.4
-  - release
-  - tip
+  - "1.9"
+  - "1.10"
 
 script:
   - go get -t ./...

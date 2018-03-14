@@ -1,12 +1,11 @@
 package metricsmgr
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/goware/go-metrics"
 	"github.com/pressly/chainstore"
-	"golang.org/x/net/context"
 )
 
 type metricsManager struct {
