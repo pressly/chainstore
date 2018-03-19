@@ -9,7 +9,6 @@ import (
 	"github.com/pressly/chainstore"
 	"github.com/pressly/chainstore/boltstore"
 	"github.com/pressly/chainstore/lrumgr"
-	"github.com/pressly/chainstore/metricsmgr"
 	"github.com/pressly/chainstore/s3store"
 	"golang.org/x/net/context"
 )
@@ -18,27 +17,33 @@ var (
 	bucketID  string
 	accessKey string
 	secretKey string
+	region    string
 )
 
 func init() {
 	bucketID = os.Getenv("S3_BUCKET")
 	accessKey = os.Getenv("S3_ACCESS_KEY")
 	secretKey = os.Getenv("S3_SECRET_KEY")
+	region = os.Getenv("S3_REGION")
+
+	if region == "" {
+		region = "us-east-1"
+	}
 }
 
 func main() {
 	ctx := context.Background()
 
 	diskStore := lrumgr.New(500*1024*1024, // 500MB of working data
-		metricsmgr.New("chainstore.ex.bolt",
-			boltstore.New("/tmp/store.db", "myBucket"),
-		),
+		boltstore.New("/tmp/store.db", "myBucket"),
 	)
 
-	remoteStore := metricsmgr.New("chainstore.ex.s3",
-		// NOTE: you'll have to supply your own keys in order for this example to work properly
-		s3store.New(bucketID, accessKey, secretKey),
-	)
+	remoteStore := s3store.New(s3store.Config{
+		S3Bucket:    bucketID,
+		S3AccessKey: accessKey,
+		S3SecretKey: secretKey,
+		S3Region:    region,
+	})
 
 	dataStore := chainstore.New(diskStore, remoteStore)
 
@@ -46,14 +51,15 @@ func main() {
 	/*
 		dataStore := chainstore.New(
 			lrumgr.New(500*1024*1024, // 500MB of working data
-				metricsmgr.New("chainstore.ex.bolt",
-					boltstore.New("/tmp/store.db", "myBucket"),
-				),
+				boltstore.New("/tmp/store.db", "myBucket"),
 			),
-			metricsmgr.New("chainstore.ex.s3",
+			s3store.New(s3store.Config{
 				// NOTE: you'll have to supply your own keys in order for this example to work properly
-				s3store.New("myBucket", "access-key", "secret-key"),
-			),
+				S3Bucket:    bucketID,
+				S3AccessKey: accessKey,
+				S3SecretKey: secretKey,
+				S3Region:    region,
+			})
 		)
 	*/
 
@@ -63,13 +69,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Open: %q", err)
 	}
-
-	// Since we've used the metricsManager above (metricsmgr), any calls to the boltstore
-	// and s3store will be measured. Next is to send metrics to librato, graphite, influxdb,
-	// whatever.. via github.com/goware/go-metrics
-	// go librato.Librato(metrics.DefaultRegistry, 10e9, ...)
-
-	//--
 
 	// Save the object in the chain. It will be Put() synchronously into diskStore,
 	// the boltdb engine, and then immediately dispatch background Put()'s to the
