@@ -3,12 +3,12 @@
 package s3store
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/pressly/chainstore"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -31,7 +31,7 @@ func TestS3Store(t *testing.T) {
 
 	assert := assert.New(t)
 
-	store = chainstore.New(New(bucketID, accessKey, secretKey))
+	store = chainstore.New(New(Config{S3Bucket: bucketID, S3AccessKey: accessKey, S3SecretKey: secretKey, S3Region: "us-east-1"}))
 	err = store.Open()
 	assert.Nil(err)
 	defer store.Close()

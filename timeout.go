@@ -1,9 +1,8 @@
 package chainstore
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 func Timeout(d time.Duration, stores ...Store) Store {
