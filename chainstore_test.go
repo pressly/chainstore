@@ -144,7 +144,7 @@ func TestAsyncChain(t *testing.T) {
 	assert.Nil(err) // no error because sync store took it fine
 
 	time.Sleep(time.Second * 1) // wait for async operation..
-	assert.NotEmpty(errored.Load())
+	assert.NotNil(errored.Load())
 }
 
 type testStore struct{}
